@@ -1,6 +1,6 @@
 # CMDS
 
-v0.1
+v0.2
 
 
  Simulate 2D spectroscopy using QuantumOptics.jl

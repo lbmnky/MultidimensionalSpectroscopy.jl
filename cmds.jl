@@ -86,7 +86,6 @@ fn_base : directory to store data in
 function save_2d(spec2d,T,fn_base)
     if isdir(fn_base)
         """ nothing """
-        print("nothings")
     else
         mkdir(fn_base)
     end
@@ -554,6 +553,10 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
     for i=1:length(rho_τ)
 
         if pathway == "R_gsb"
+            #------------------------#
+            # {μ * [(rho0 * μ) * μ]}
+            # copy: (μ * ((rho0 * μ) * μ))
+            #------------------------#
             # second field interaction A(τ)
             temp_rho_a =      rho_τ[i]   * μ
             temp_rho_a_cc =   μ          * rho_τ_cc[i]
@@ -576,6 +579,10 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
             temp_rho_cc   = μ * temp_rho_a_cc
 
         elseif pathway == "NR_gsb"
+            #-------------------------#
+            # {μ * [μ * (μ * rho0)]}
+            # copy: (μ * (μ * (μ * rho0)))
+            #-------------------------#
             temp_rho_a = μ * rho_τ[i]
             temp_rho_a_cc = rho_τ_cc[i] * μ
             if XX
@@ -596,6 +603,10 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
             temp_rho_cc = temp_rho_a_cc * μ
 
         elseif pathway == "R_se"
+            #------------------------------#
+            # {[μ * (rho0 * μ)] * μ} + cc
+            # copy: ((μ * (rho0 * μ)) * μ)
+            #------------------------------#
             temp_rho_a = μ * rho_τ[i]
             temp_rho_a_cc = rho_τ_cc[i] * μ
             if XX
@@ -616,6 +627,10 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
             temp_rho_cc = μ * temp_rho_a
 
         elseif pathway == "NR_se"
+            #------------------------------#
+            # {[(μ * rho0) * μ] * μ} + cc
+            # copy: (((μ * rho0) * μ) * μ)
+            #------------------------------#
             temp_rho_a =      rho_τ[i]   * μ
             temp_rho_a_cc = μ * rho_τ_cc[i]
             if XX
@@ -636,6 +651,10 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
             temp_rho_cc = μ * temp_rho_a
 
         elseif pathway == "R_esa"
+            #------------------------------#
+            # {μ * [μ * (rho0 * μ)]} + cc
+            # copy: (μ * (μ * (rho0 * μ)))
+            #------------------------------#
             temp_rho_a = μ * rho_τ[i]
             temp_rho_a_cc = rho_τ_cc[i] * μ
             if XX
@@ -656,6 +675,10 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
             temp_rho_cc = temp_rho_a_cc * μ
 
         elseif pathway == "NR_esa"
+            #-----------------------------#
+            # {μ * [(μ * rho0) * μ]} + cc
+            # copy: (μ * ((μ * rho0) * μ))
+            #-----------------------------#
             temp_rho_a =      rho_τ[i]   * μ
             temp_rho_a_cc = μ * rho_τ_cc[i]
             if XX
@@ -703,6 +726,13 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
                 println("showing density matrices from during the evolution.\n")
                 println(i)
                 println(pathway)
+                println("μ")
+                println(dense(μ))
+                println("rho0")
+                println(rho0)
+                println(μ*rho0)
+                println(temp_rho_a)
+                println("*****")
                 println(rho_τ[i])
                 #println(temp_rho_a[1])
                 println("after T evolution")

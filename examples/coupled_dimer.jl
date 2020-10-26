@@ -304,7 +304,7 @@ if calc_2d
         zp = 10 # zeropad up to 2^zp
 
         ## calculate 2D spectra at
-        T = [50] #fs
+        T = [0] #fs
 
         out2d = Array{cmds.out2d}(undef, length(T))
         for i = 1:length(T)
