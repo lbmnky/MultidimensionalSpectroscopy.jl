@@ -496,6 +496,8 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
 
     ## use full transition dipole operator matrix
     μ = μa + μb
+    μ_ge = μa
+    μ_ef = μb
 
     ## switch between Lindblad and Redfield master equation
     t_ev(A,B,C,D) =
@@ -513,7 +515,7 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
 
     # SELECTING ONLY DIAGONAL ELEMENTS AT THIS POINT ELIMINATES PATHWAYS
     # THAT OSCILLATE DURING t2
-    XX = true # get rid of off-diagonal elements during t2
+    XX = false # get rid of off-diagonal elements during t2
     YY = false  # get rid of on-diagonal elements during t2
 
     # initialize output matrix
@@ -525,11 +527,11 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
     # non-rephasing to ensure that emission is from the left of the double-
     # sided vertical Feynman diagram
     if pathway[1] == 'R'        # first interaction from right if rephasing
-        rho0 = rho0 * μ
-        rho0_cc = μ * rho0
+        rho0 = rho0 * μ_ge
+        rho0_cc = μ_ge * rho0
     elseif pathway[1] == 'N'    # first interaction from left if non-rephasing
-        rho0 = μ * rho0
-        rho0_cc = rho0 * μ
+        rho0 = μ_ge * rho0
+        rho0_cc = rho0 * μ_ge
     else
         error("cmds -- no pathway selected")
     end
@@ -558,8 +560,8 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
             # copy: (μ * ((rho0 * μ) * μ))
             #------------------------#
             # second field interaction A(τ)
-            temp_rho_a =      rho_τ[i]   * μ
-            temp_rho_a_cc =   μ          * rho_τ_cc[i]
+            temp_rho_a =      rho_τ[i]   * μ_ge
+            temp_rho_a_cc =   μ_ge          * rho_τ_cc[i]
             # eliminate on-diagonal or off-diagonal elements
             if XX
                 temp_rho_a.data = tril(triu(temp_rho_a.data))
@@ -575,16 +577,16 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
                 temp_rho_a_cc = temp_rho_a_cc[end]
             end
             # third field interaction
-            temp_rho   = μ * temp_rho_a
-            temp_rho_cc   = μ * temp_rho_a_cc
+            temp_rho   = μ_ge * temp_rho_a
+            temp_rho_cc   = μ_ge * temp_rho_a_cc
 
         elseif pathway == "NR_gsb"
             #-------------------------#
             # {μ * [μ * (μ * rho0)]}
             # copy: (μ * (μ * (μ * rho0)))
             #-------------------------#
-            temp_rho_a = μ * rho_τ[i]
-            temp_rho_a_cc = rho_τ_cc[i] * μ
+            temp_rho_a = μ_ge * rho_τ[i]
+            temp_rho_a_cc = rho_τ_cc[i] * μ_ge
             if XX
                 temp_rho_a.data = tril(triu(temp_rho_a.data))
             elseif YY
@@ -599,16 +601,16 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
                 temp_rho_a_cc = temp_rho_a_cc[end]
             end
 
-            temp_rho   = μ * temp_rho_a
-            temp_rho_cc = temp_rho_a_cc * μ
+            temp_rho   = μ_ge * temp_rho_a
+            temp_rho_cc = temp_rho_a_cc * μ_ge
 
         elseif pathway == "R_se"
             #------------------------------#
             # {[μ * (rho0 * μ)] * μ} + cc
             # copy: ((μ * (rho0 * μ)) * μ)
             #------------------------------#
-            temp_rho_a = μ * rho_τ[i]
-            temp_rho_a_cc = rho_τ_cc[i] * μ
+            temp_rho_a = μ_ge * rho_τ[i]
+            temp_rho_a_cc = rho_τ_cc[i] * μ_ge
             if XX
                 temp_rho_a.data = tril(triu(temp_rho_a.data))
             elseif YY
@@ -623,16 +625,16 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
                 temp_rho_a_cc = temp_rho_a_cc[end]
             end
 
-            temp_rho   =       temp_rho_a * μ
-            temp_rho_cc = μ * temp_rho_a
+            temp_rho   =       temp_rho_a * μ_ge
+            temp_rho_cc = μ_ge * temp_rho_a
 
         elseif pathway == "NR_se"
             #------------------------------#
             # {[(μ * rho0) * μ] * μ} + cc
             # copy: (((μ * rho0) * μ) * μ)
             #------------------------------#
-            temp_rho_a =      rho_τ[i]   * μ
-            temp_rho_a_cc = μ * rho_τ_cc[i]
+            temp_rho_a =      rho_τ[i]   * μ_ge
+            temp_rho_a_cc = μ_ge * rho_τ_cc[i]
             if XX
                 temp_rho_a.data = tril(triu(temp_rho_a.data))
             elseif YY
@@ -647,16 +649,16 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
                 temp_rho_a_cc = temp_rho_a_cc[end]
             end
 
-            temp_rho   =       temp_rho_a * μ
-            temp_rho_cc = μ * temp_rho_a
+            temp_rho   =       temp_rho_a * μ_ge
+            temp_rho_cc = μ_ge * temp_rho_a
 
         elseif pathway == "R_esa"
             #------------------------------#
             # {μ * [μ * (rho0 * μ)]} + cc
             # copy: (μ * (μ * (rho0 * μ)))
             #------------------------------#
-            temp_rho_a = μ * rho_τ[i]
-            temp_rho_a_cc = rho_τ_cc[i] * μ
+            temp_rho_a = μ_ge * rho_τ[i]
+            temp_rho_a_cc = rho_τ_cc[i] * μ_ge
             if XX
                 temp_rho_a.data = tril(triu(temp_rho_a.data))
             elseif YY
@@ -671,16 +673,16 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
                 temp_rho_a_cc = temp_rho_a_cc[end]
             end
 
-            temp_rho   = μ * temp_rho_a
-            temp_rho_cc = temp_rho_a_cc * μ
+            temp_rho   = μ_ef * temp_rho_a
+            temp_rho_cc = temp_rho_a_cc * μ_ef
 
         elseif pathway == "NR_esa"
             #-----------------------------#
             # {μ * [(μ * rho0) * μ]} + cc
             # copy: (μ * ((μ * rho0) * μ))
             #-----------------------------#
-            temp_rho_a =      rho_τ[i]   * μ
-            temp_rho_a_cc = μ * rho_τ_cc[i]
+            temp_rho_a =      rho_τ[i]   * μ_ge
+            temp_rho_a_cc = μ_ge * rho_τ_cc[i]
             if XX
                 temp_rho_a.data = tril(triu(temp_rho_a.data))
             elseif YY
@@ -695,8 +697,8 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
                 temp_rho_a_cc = temp_rho_a_cc[end]
             end
 
-            temp_rho   = μ * temp_rho_a
-            temp_rho_cc = temp_rho_a_cc * μ
+            temp_rho   = μ_ef * temp_rho_a
+            temp_rho_cc = temp_rho_a_cc * μ_ef
 
         end
 
