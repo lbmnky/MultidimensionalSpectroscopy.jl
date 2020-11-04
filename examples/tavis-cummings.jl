@@ -1,6 +1,6 @@
 #!/usr/bin/julia
-# using PyPlot
-# using QuantumOptics
+using PyPlot
+using QuantumOptics
 
 # make sure to set script directory as pwd()
 cd(@__DIR__)
