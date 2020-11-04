@@ -35,16 +35,16 @@ H_mb = manybodyoperator(b_mb, H)
 j12_mb = manybodyoperator(b_mb, j12)
 
 
-wc = 0.9
+wc = 1
 N = 1               # number of cavity fock states
 b_fock = FockBasis(N)
 a = destroy(b_fock) ⊗ one(b_mb)
 at = dagger(a)
 
-wa = 1.1
+wa = 1
 sm = one(b_fock) ⊗ j12_mb
 sp = dagger(sm)
-println(sm)
+println(dense(sm))
 
 Psi0 = fockstate(b_fock,0) ⊗ basisstate(b_mb,[Nb,0])    # start with an excited cavity
 rho0 = dm(Psi0)
