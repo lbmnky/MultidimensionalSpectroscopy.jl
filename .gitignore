@@ -7,8 +7,11 @@
 
 # Ignore the build directory
 #/dist
-/new_ideas
-/examples/01_Output
+/new_ideas/
+/examples/01_Output/
+
+# Ignore todo list
+TODO.md
 
 # The file containing environment variables
 #.env
