@@ -5,7 +5,7 @@ Simulate coherent multidimensional spectroscopy signals using from quantum mecha
 
 ## Introduction
 
-The code relies primarily on [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl). The module [CMDS.jl](https://github.com/lbmnky/CMDS/blob/master/cmds.jl) contains all the necessary functions. [examples/](https://github.com/lbmnky/CMDS/tree/master/examples) shows example scenarios.
+The code relies primarily on [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl). The module [CMDS.jl](/cmds.jl) contains all the necessary functions. [examples/](/examples) shows example scenarios.
 
 ## Installation
 
@@ -17,9 +17,9 @@ CMDS requires the Julia language and [qojulia/QuantumOptics.jl](https://github.c
 [QoJulia](https://docs.qojulia.org/installation/)
 
 
-## examples/
+## Examples
 
-The following [examples](/examples) are available.
+The following [/examples](/examples) are available.
 
 ### coupled_dimer.jl
 
