@@ -1,5 +1,6 @@
 # To do !
 
+- Comments, comments, comments ...
 - generic way to construct Hamiltonians
 - understand many-body formalism
 
