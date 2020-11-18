@@ -16,6 +16,43 @@ CMDS requires the Julia language and [qojulia/QuantumOptics.jl](https://github.c
 
 [QoJulia](https://docs.qojulia.org/installation/)
 
+## CMDS.jl - Functions
+
+#### create_colormap
+
+#### zeropad
+
+#### interpt
+
+#### make2Dspectra
+
+#### correlations
+
+#### view_dm_evo
+
+#### save_2d
+
+#### plot2d
+
+#### crop2d
+
+### How to use:
+
+initialize output array
+
+`` out2d = Array{cmds.out2d}(undef, length(T)) ``
+
+where T is a vector containing population time steps.
+
+Next call `` cmds.make2dspectra `` in a for loop
+
+```
+for i = 1:length(T)
+    out2d[i] = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],"lindblad";debug=false,zp=zp)
+end
+```
+
+with tlist, rho0, H, F, ...
 
 ## Examples
 
