@@ -24,7 +24,14 @@ The following examples are available.
 
 ### coupled_dimer.jl
 
-[text]
+The properties (angles, coupling strength, etc.) of a coupled dimer system are calculated and QuantumOptics.jl is used to calculate the correlation function and linear absorption spectrum.
+
+![coupledDimer](/example_images/coupledDimer.png)
+
+CMDS.jl uses QuantumOptics.jl to calculate the response functions in a four-wave mixing experiment and calculates the expected 2D spectrum.
+
+![coupledDimer 2D spectrum](/example_images/coupledDimer2D.png)
+
 
 ### displaced_harmonic_oscillator_model.jl
 
