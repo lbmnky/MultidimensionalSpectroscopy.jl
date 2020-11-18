@@ -32,15 +32,31 @@ CMDS.jl uses QuantumOptics.jl to calculate the response functions in a four-wave
 
 ![coupledDimer 2D spectrum](/example_images/coupledDimer2D.png)
 
-
 ### displaced_harmonic_oscillator_model.jl
 
 [text]
+
+![displacedHarmonicOscillator](/example_images/displHarmOsc.png)
+
+2D spectrum of the Jaynes-Cummings model at different delays of the population time T.
+
+![displacedHarmonicOscillator 2D spectrum](/example_images/displHarmOsc2D.png)
 
 ### FCF_morse-potential.jl
 
 [text]
 
-### tavis-cummings
+![FCF Morse Potential](/example_images/FCfactorsMorsePot.png)
+
+### Jaynes-Cummings model
+
+[text]
+
+![Jaynes-Cummings](/example_images/JaynesCummingsSpectrum.png)
+
+![Jaynes-Cummings 2D spectrum](/example_images/JaynesCummingsSpectrum2D.png)
+
+
+### Tavis-Cummings
 
 [text]
