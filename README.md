@@ -1,5 +1,4 @@
 # CMDS
-
 v0.2
 
 Simulate coherent multidimensional spectroscopy signals using from quantum mechanical models.
@@ -12,15 +11,15 @@ The code relies primarily on [qojulia/QuantumOptics.jl](https://github.com/qojul
 
 CMDS requires the Julia language and [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl), which can be installed from via the standard sources:
 
-Julia: [Installation](https://docs.julialang.org/en/v1/manual/getting-started/)
+[Julia](https://docs.julialang.org/en/v1/manual/getting-started/)
 
-QuantumOptics.jl:
-[Installation](https://docs.qojulia.org/installation/)
+
+[QoJulia](https://docs.qojulia.org/installation/)
 
 
 ## examples/
 
-The following examples are available.
+The following [examples](/examples) are available.
 
 ### coupled_dimer.jl
 
@@ -59,4 +58,4 @@ CMDS.jl uses QuantumOptics.jl to calculate the response functions in a four-wave
 
 ### Tavis-Cummings
 
-[text]
+In order to go beyond the Jaynes-Cummings model ...
