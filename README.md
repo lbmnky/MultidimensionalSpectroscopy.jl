@@ -1,7 +1,6 @@
 # CMDS
-v0.2
 
-Simulate coherent multidimensional spectroscopy signals using from quantum mechanical models.
+Simulate coherent multidimensional spectroscopy signals from quantum mechanical models.
 
 ## Introduction
 
@@ -79,8 +78,6 @@ CMDS.jl uses QuantumOptics.jl to calculate the response functions in a four-wave
 
 ![displacedHarmonicOscillator](/example_images/displHarmOsc.png)
 
-2D spectrum of the Jaynes-Cummings model at different delays of the population time T.
-
 ![displacedHarmonicOscillator 2D spectrum](/example_images/displHarmOsc2D.png)
 
 ### FCF_morse-potential.jl
@@ -91,9 +88,19 @@ CMDS.jl uses QuantumOptics.jl to calculate the response functions in a four-wave
 
 ### Jaynes-Cummings model
 
-[text]
+The coupling between a quantized optical field and a two-level system is described by the Jaynes-Cummings Hamiltonian
+
+H = ωᵣ a† a + ωₐ σ₊ σ₋ + ( a† σ₋ + a σ₊ )
+
+```julia
+H = wc * at * a + wa * sp * sm + g * (at * sm + a * sp)
+```
+
+blabla
 
 ![Jaynes-Cummings](/example_images/JaynesCummingsSpectrum.png)
+
+2D spectrum of the Jaynes-Cummings model at different delays of the population time T.
 
 ![Jaynes-Cummings 2D spectrum](/example_images/JaynesCummingsSpectrum2D.png)
 
