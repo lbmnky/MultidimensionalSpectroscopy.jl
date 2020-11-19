@@ -5,7 +5,9 @@ Simulate coherent multidimensional spectroscopy signals using from quantum mecha
 
 ## Introduction
 
-The code relies primarily on [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl). The module [CMDS.jl](/cmds.jl) contains all the necessary functions. [examples/](/examples) shows example scenarios.
+The code relies primarily on [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl) and a tutorial can be found [here](https://docs.qojulia.org/). Further examples and functionalities are found the Python project [QuTiP](http://qutip.org/).
+
+The module [CMDS.jl](/cmds.jl) contains the necessary functions to calculate 2D spectra and will be described below. [examples/](/examples) shows example scenarios.
 
 ## Installation
 
@@ -13,28 +15,31 @@ CMDS requires the Julia language and [qojulia/QuantumOptics.jl](https://github.c
 
 [Julia](https://docs.julialang.org/en/v1/manual/getting-started/)
 
-
 [QoJulia](https://docs.qojulia.org/installation/)
 
 ## CMDS.jl - Functions
 
-#### create_colormap
+Type ``?cmds.<function>`` into the REPL to access the documentation for a certain function.
 
-#### zeropad
+### Available functions:
 
-#### interpt
+- create_colormap
 
-#### make2Dspectra
+- zeropad
 
-#### correlations
+- interpt
 
-#### view_dm_evo
+- make2Dspectra
 
-#### save_2d
+- correlations
 
-#### plot2d
+- view_dm_evo
 
-#### crop2d
+- save_2d
+
+- plot2d
+
+- crop2d
 
 ### How to use:
 
@@ -46,7 +51,7 @@ where T is a vector containing population time steps.
 
 Next call `` cmds.make2dspectra `` in a for loop
 
-```
+```julia
 for i = 1:length(T)
     out2d[i] = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],"lindblad";debug=false,zp=zp)
 end

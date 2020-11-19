@@ -21,7 +21,6 @@ norm_spec : normalize to abs.(maximum(data)), where data is the spectrum to
 scaling   : pick z-scaling ("lin", "tan", "cube", "asinh")
 
 """
-
 function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin")
 
     ## select 2D spectrum to plot
@@ -69,20 +68,21 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin")
 end
 
 """
-    save_2d
+    save_2d(spec2d,T,fn_base)
 
 Saves 2D spectra to specified directory. Can be used in a loop to store all
-data. E.g.:
-
-    cmds.save_2d([out2d[i].full2d for i = 1:length(T)],T,fn)
+data.
 
 # Arguments
-spec2d  : 2D array of data to be saved
-T       : array of T times
-fn_base : directory to store data in
+- spec2d  : 2D array of data to be saved
+- T       : array of T times
+- fn_base : directory to store data in
 
+# Example
+```julia
+    cmds.save_2d([out2d[i].full2d for i = 1:length(T)],T,fn)
+```
 """
-
 function save_2d(spec2d,T,fn_base)
     if isdir(fn_base)
         """ nothing """
@@ -108,7 +108,6 @@ rhot : time evolution of density matrix
 dt   : time steps between subplots
 
 """
-
 function view_dm_evo(rhot,dt)
     figure()
     for i = 1:12
@@ -127,7 +126,6 @@ end
 
 Create a "bright" or "dark" custom colormap to display 2D spectra.
 """
-
 function create_colormap(scheme="bright")
 
     ## define colors from most negative (MMM) ... to ... most positive (PPP)
@@ -163,7 +161,6 @@ transform).
 * 'N'   : data will be zeropadded up to 2^N, if N = 0 return input data
 
 """
-
 function zeropad(dat, N)
 
     if 0 < N < log2(size(dat,1))
@@ -210,7 +207,6 @@ Interpolate frequency/energy vector after zeropadding of data using "zeropad".
 * 'tlist'   : extrapolated time vector
 * 'ω'       : interpolated frequency/energy vector
 """
-
 function interpt(tlist, N)
 
     # if N smaller than log2(size of data), increase N by 1
@@ -253,7 +249,6 @@ Structure that stores the output of "make2Dspectra"
 * 'se'          : complex 2D spectrum with only SE pathways
 * 'esa'         : complex 2D spectrum with only ESA pathways
 """
-
 mutable struct out2d
     ω
     full2d
@@ -293,7 +288,6 @@ functions by evaluating the Lindblad master equation.
             to also scale tlist and ω via function "interpt.jl". Default zp=0,
             data is not zeropadded.
 """
-
 function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, zp=0)
 
     println("############# ########################### #############");
@@ -438,7 +432,9 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, zp
     end
 end
 
-
+"""
+need help
+"""
 function crop2d(data_struct,w_min;w_max=100,step=1)
 
     min_i = argmin(abs.(data_struct.ω .- w_min))
@@ -456,6 +452,7 @@ function crop2d(data_struct,w_min;w_max=100,step=1)
 
 end
 
+### I am considering R + conj(R) ... seems that 2D spectra turn out distorted
 """
     corr = correlations(tlist, rho0, H, F, μa, μb, pathway, method, debug)
 
@@ -480,9 +477,6 @@ Calculate the response functions necessary for 2D spectroscopy.
 # Output
 * 'corr'    : 2D correlation function
 """
-
-### I am considering R + conj(R) ... seems that 2D spectra turn out distorted
-
 function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
 
     # GS        : ground state
@@ -515,7 +509,7 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
 
     # SELECTING ONLY DIAGONAL ELEMENTS AT THIS POINT ELIMINATES PATHWAYS
     # THAT OSCILLATE DURING t2
-    XX = false # get rid of off-diagonal elements during t2
+    XX = true # get rid of off-diagonal elements during t2
     YY = false  # get rid of on-diagonal elements during t2
 
     # initialize output matrix
