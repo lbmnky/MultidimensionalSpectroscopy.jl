@@ -25,7 +25,7 @@ cmp = cmds.create_colormap("bright");
 
 calc_2d = true
 
-D_HR = .5
+D_HR = .55
 d = sqrt(D_HR)
 
 b_tls = NLevelBasis(2)  # Hilbert-space of system
@@ -184,12 +184,13 @@ if calc_2d
     zp = 10
 
     ## calculate 2d spectra at
-    T = [0.]
+    T = [0.,10,20]
     #out2d = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T,"lindblad";debug=false,zp=zp);
     out2d = Array{cmds.out2d}(undef, length(T))
     for i = 1:length(T)
         out2d[i] = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
-                                            "lindblad";debug=true,zp=zp);
+                                            "lindblad";debug=true,use_sub=false,
+                                                zp=zp);
     end
 
     ## crop 2D data and increase dw

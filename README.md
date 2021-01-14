@@ -58,6 +58,12 @@ end
 
 with tlist, rho0, H, F, ...
 
+Using multithreading, several population time steps can be evaluated simultaneously (make sure to disable all output plots within cmds.make2Dspectra(), as these might crash the execution):
+```julia
+Threads.@threads for i = 1:length(T)
+    out2d[i] = cmds.make2Dspectra(...)
+end
+```
 ## Examples
 
 The following [/examples](/examples) are available.
@@ -104,6 +110,10 @@ blabla
 
 ![Jaynes-Cummings 2D spectrum](/example_images/JaynesCummingsSpectrum2D.png)
 
+
+### Ensemble of two-level systems with disorder
+
+...
 
 ### Tavis-Cummings
 

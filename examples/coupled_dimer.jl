@@ -21,7 +21,6 @@ pygui(true)
 # run once with calc_2d = false to initialize functions
 calc_2d = true
 
-
 cmp = cmds.create_colormap("bright");
 
 function draw_dipole(x,y,α,d)
@@ -44,7 +43,7 @@ end
 # position of dipole 1 and angle wrt to x-axis (random)
 x₁, y₁, α₁, d₁ = 0, 0, angle2rad(0), 0.5
 # r: distance, β: slip angle
-r , β          = 4.8, angle2rad(0)
+r , β          = 1.0, angle2rad(0)
 # position of dipole 2 (calculated)
 x₂, y₂         = x₁ + r*cos(β), y₁ + r*sin(β)
 # angle and moment of dipole 2
@@ -54,7 +53,7 @@ x₂, y₂         = x₁ + r*cos(β), y₁ + r*sin(β)
 # homo dimer    : E1 == E2 and J1 = J2
 # hetero dimer  : E1 != E2
 E₁ = 3.0
-E₂ = 3.95
+E₂ = 3.2
 
 ## draw dimer
 #
@@ -116,13 +115,13 @@ H₂ = E₂ * j21 * j12
 Hₓ = J * (j12 ⊗ j21 + j21 ⊗ j12)
 # use the following with TDMs between ground- and biexciton state, this modifies
 # the energies of the ground- and doubly excited state slightly
-Hₓ = J * ((j21+j12) ⊗ (j21+j12))
+#Hₓ = J * ((j21+j12) ⊗ (j21+j12)) #???????????
 # H is the total Hamiltonian of the system
 H = one(b_mon) ⊗ H₁ + H₂ ⊗ one(b_mon) + Hₓ
 
 ## get eigenstates and eigenvalues of H
 #  using Julia LinearAlgebra functions instead of QuantumOptics requires to use H.data
-states = eigvecs(dense(H).data)
+states   = eigvecs(dense(H).data)
 energies = eigvals(dense(H).data)
 
 #states = eigenstates(dense(H))
@@ -157,7 +156,7 @@ display(dense(c_ops[1])); display(dense(c_ops[2]))
 
 ## make transition dipole operator
 # clearly now μ has a direction dependence, but if sample is isotropic  take:
-μ = (μx + μy)
+μ   = (μx + μy)
 # and the tdm with the ground state:
 μ12 = μ .* (j12*j21⊗j21 + j12*j21⊗j12 + j21⊗(j12*j21) + j12⊗(j12*j21))
 display(dense(μ12))
@@ -165,6 +164,13 @@ display(dense(μ12))
 μ23 = μ .* (j21*j12⊗j21 + j21*j12⊗j12 + j21⊗(j21*j12) + j12⊗(j21*j12))
 display(dense(μ23))
 
+rho1 = μ12 * rho0 * μ12
+rho1 = μ12 * rho0 * μ12
+
+rho2 = μ23 * rho1 * μ23
+μ23  = μ23 / sqrt(tr(rho1))
+rho2 = μ23 * rho1 * μ23
+μ12  = μ12 / sqrt(tr(rho1))
 
 # calculate magnitude of tdm with singly excited states e1 and e2
 # HOT TO ORDER THEM ???? ... depending on J>0 (H) or J<0 (J) ? Something more
@@ -187,7 +193,6 @@ bar(1, real(b))
 xticks([0, 1], ["μ_g-e1", "μ_g-e2"])
 xlim([-1, 2]); ylim([0, 1.5 * maximum(real([a, b]))])
 
-
 ## calculate and plot expectation values of population
 #=
 tout, rhot = timeevolution.master(tlist, rho0, H, F)
@@ -197,6 +202,9 @@ figure(figsize=(6,3));
 plot(tout,nc)
 plot(tout,na)
 =#
+#rho0.data[1,1] = 0.9
+#rho0.data[2,2] = .0
+#rho0.data[3,3] = .1
 
 ## calculated 1st order correlation function and associated spectrum
 # STILL UNSURE ABOUT FREQUENCY AXIS/CONVENTION
@@ -257,8 +265,8 @@ end
 ### HOW TO GET RIGHT OPERATORS ??????????
 ### ????????????????????????????????????
 a_ops = [sqrt(0.1)*((j12*j21)⊗one(b_mon)+one(b_mon)⊗(j12*j21)),spectral_density]
-a_ops = [sqrt(1)*one(b_mon)⊗(j12*j21), noise_power]
-j_ops = [sqrt(0.1)*j12⊗one(b_mon),sqrt(0.1)*one(b_mon)⊗j12]
+a_ops = [sqrt(.51)*one(b_mon)⊗(j12*j21), noise_power]
+j_ops = [sqrt(0.01)*j12⊗one(b_mon),sqrt(0.01)*one(b_mon)⊗j12]
 
 R, ekets = timeevolution.bloch_redfield_tensor(H, [a_ops], J=j_ops)
 # different elements in R ... https://www.pnas.org/content/pnas/108/52/20908.full.pdf
@@ -296,7 +304,7 @@ plot(ww,debye(ww));
 """
 
 F = c_ops
-F = R
+#F = R
 
 if calc_2d
 
@@ -304,12 +312,13 @@ if calc_2d
         zp = 10 # zeropad up to 2^zp
 
         ## calculate 2D spectra at
-        T = [0] #fs
+        T = [0, 5, 11, 20] #fs
 
         out2d = Array{cmds.out2d}(undef, length(T))
-        for i = 1:length(T)
+
+        Threads.@threads for i = 1:length(T)
             out2d[i] = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
-                                                "redfield";debug=true,zp=zp);
+                                                "lindblad";debug=true,zp=zp);
         end
 
         ## crop 2D data and increase dw
@@ -334,6 +343,7 @@ if calc_2d
                 cmds.plot2d(ω,round.(out2d[i].full2d,digits=1);repr=rep,scaling=scal)
                 title("2D spectrum at $(T[i]) fs")
                 xlim([0, E₁+E₂]); ylim([0, E₁+E₂]);
+                colorbar();
         end
 
         #colorbar(ticks=lvls_ticks);

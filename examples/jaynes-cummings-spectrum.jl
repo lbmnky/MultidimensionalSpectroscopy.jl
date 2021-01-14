@@ -1,6 +1,8 @@
 #!/usr/bin/julia
-# using PyPlot
-# using QuantumOptics
+using PyPlot
+using QuantumOptics
+using LinearAlgebra
+using Random
 
 # make sure to set script directory as pwd()
 cd(@__DIR__)
@@ -33,7 +35,7 @@ n_th_a = 0.0        # avg number of thermal bath excitation
 
 tlist = [0:0.1:50;]
 b_fock = FockBasis(N)
-b_atom = NLevelBasis(3)
+b_atom = NLevelBasis(2)
 Psi0 = fockstate(b_fock,1) ⊗ nlevelstate(b_atom,1)    # start with an excited cavity
 println(Psi0)
 
@@ -73,7 +75,7 @@ rho0 = dm(Psi0)
 corr = timecorrelations.correlation(tlist, rho0, H, J, at, a; rates=rates)
 ω, spec = timecorrelations.correlation2spectrum(tlist, corr; normalize_spec=true)
 plot(tlist,corr)
-
+plot(ω,spec)
 figure(figsize=(6,3))
 plot(ω, spec)
 

@@ -51,12 +51,22 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin")
 
     ## rescale lvls to data (don't rescale data, takes more time)
     m = -1*(maximum(abs.(real(data)))); M = (maximum(abs.(real(data))))
-    lvls = lvls * maximum(abs.([m, M]));
-    lvls_ticks = [-1:0.2:1;] * maximum(abs.([m, M]))
+    if m != 0 && M != 0
+        lvls = lvls * maximum(abs.([m, M]));
+        lvls_ticks = [-1:0.2:1;] * maximum(abs.([m, M]))
+    else
+        lvls = 0.001 * lvls;
+    end
 
     ## plot data as filled contour
-    contourf(ω,ω,data,lvls,cmap=create_colormap());
-    xlabel("ω₃"); ylabel("ω₁"); #clim([m, M]);
+    conv = "ω3ω1"
+    if conv == "ω1ω3"
+        contourf(ω,ω,data,lvls,cmap=create_colormap());
+        xlabel("ω₃"); ylabel("ω₁"); #clim([m, M]);
+    elseif conv == "ω3ω1"
+        contourf(ω,ω,transpose(data),lvls,cmap=create_colormap());
+        xlabel("ω₁"); ylabel("ω₃");
+    end
     plot([ω[1], ω[end]], [ω[1], ω[end]],"k--");
 
     ## plot positive and negative contourlines with different linestyles
@@ -288,31 +298,90 @@ functions by evaluating the Lindblad master equation.
             to also scale tlist and ω via function "interpt.jl". Default zp=0,
             data is not zeropadded.
 """
-function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, zp=0)
+function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, use_sub=true, zp=0)
 
     println("############# ########################### #############");
     println("############# calculate R and NR pathways #############");
     println("############# ########################### #############\n");
 
-    # ground state bleach
-    corr_func_NR_gsb = correlations(tlist,rho0,H,F,μ12,μ23,T,"NR_gsb",method,false)
-    corr_func_R_gsb  = correlations(tlist,rho0,H,F,μ12,μ23,T,"R_gsb",method,false)
-    #rhots_NR_gsb = rhots_NR_gsb - conj(rhots_NR_gsb)
-    #rhots_R_gsb = rhots_R_gsb - conj(rhots_R_gsb)
+    # TODO make subspace for GSB and SE pathways with only single excited manifold
 
+    Eivecs = eigvecs(dense(H).data)
 
-    # stimulated emission
-    corr_func_NR_se = correlations(tlist,rho0,H,F,μ12,μ23,T,"NR_se",method,false)
-    corr_func_R_se  = correlations(tlist,rho0,H,F,μ12,μ23,T,"R_se",method,true)
-    #rhots_NR_se = rhots_NR_se - conj(rhots_NR_se)
-    #rhots_R_se = rhots_R_se - conj(rhots_R_se)
+    L = length(H.basis_l.bases)
+    n_sub = 1 + L + binomial(L,2)
+    Eivecs_sub = [Ket(H.basis_l,Eivecs[:,i]) for i in 1:n_sub]
+    b_sub = SubspaceBasis(H.basis_l,Eivecs_sub)
 
+    P = sparse(projector(b_sub, (H.basis_l)))
+    Pt = dagger(P)
+
+    if use_sub
+        println("dim(subspace): ", length(b_sub))
+        H_bi    = P * H * Pt
+        μ12_bi  = P * μ12 * Pt
+        μ23_bi  = P * μ23 * Pt
+        rho0_bi = P * rho0 * Pt
+        F_bi    = [P * F[i] * Pt for i in 1:length(F)]
+    else
+        H_bi    = H
+        μ12_bi  = μ12
+        μ23_bi  = μ23
+        rho0_bi = rho0
+        F_bi    = F
+    end
 
     # excited state absorption
-    corr_func_NR_esa = correlations(tlist,rho0,H,F,μ12,μ23,T,"NR_esa",method,false)
-    corr_func_R_esa  = correlations(tlist,rho0,H,F,μ12,μ23,T,"R_esa",method,false)
+    corr_func_NR_esa = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"NR_esa",method,false)
+    corr_func_R_esa  = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"R_esa", method,false)
     #rhots_NR_esa = rhots_NR_esa - conj(rhots_NR_esa)
-    #rhots_R_esa = rhots_R_esa - conj(rhots_R_esa)
+    #rhots_R_esa  = rhots_R_esa  - conj(rhots_R_esa)
+
+    # excited state absorption ... from GS
+    corr_func_NR_esax = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"NR_esax",method,false)
+    corr_func_R_esax  = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"R_esax", method,false)
+
+    n_sub       = 1 + L
+    Eivecs_sub  = [Ket(H.basis_l,Eivecs[:,i]) for i in 1:n_sub]
+    b_sub       = SubspaceBasis(H.basis_l,Eivecs_sub)
+
+    P  = sparse(projector(b_sub, (H.basis_l)))
+    Pt = dagger(P)
+
+    println("print P")
+    println(dense(P))
+    println(dense(Pt))
+    println(dense(H))
+    println(dense(P*μ12*Pt))
+
+    println(" ")
+
+    if use_sub
+        println("dim(subspace): ", length(b_sub))
+        H_si    = P * H * Pt
+        μ12_si  = P * μ12 * Pt
+        μ23_si  = P * μ23 * Pt
+        rho0_si = P * rho0 * Pt
+        F_si    = [P * F[i] * Pt for i in 1:length(F)]
+    else
+        H_si    = H
+        μ12_si  = μ12
+        μ23_si  = μ23
+        rho0_si = rho0
+        F_si    = F
+    end
+
+    # ground state bleach
+    corr_func_NR_gsb = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"NR_gsb",method,false)
+    corr_func_R_gsb  = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"R_gsb", method,false)
+    #rhots_NR_gsb = rhots_NR_gsb - conj(rhots_NR_gsb)
+    #rhots_R_gsb  = rhots_R_gsb  - conj(rhots_R_gsb)
+
+    # stimulated emission
+    corr_func_NR_se = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"NR_se",method,true)
+    corr_func_R_se  = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"R_se", method,true)
+    #rhots_NR_se = rhots_NR_se - conj(rhots_NR_se)
+    #rhots_R_se  = rhots_R_se  - conj(rhots_R_se)
 
 
     # divide first value by .5 (see Hamm and Zanni)
@@ -331,15 +400,23 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, zp
     corr_func_R_esa[1,:]  = corr_func_NR_esa[1,:] / 2
     corr_func_R_esa[:,1]  = corr_func_NR_esa[:,1] / 2
 
+    corr_func_NR_esax[1,:] = corr_func_NR_esax[1,:] / 2
+    corr_func_NR_esax[:,1] = corr_func_NR_esax[:,1] / 2
+    corr_func_R_esax[1,:]  = corr_func_NR_esax[1,:] / 2
+    corr_func_R_esax[:,1]  = corr_func_NR_esax[:,1] / 2
+
     # zeropad data prior to fft to increase resolution
     corr_func_NR_gsb = zeropad(corr_func_NR_gsb,zp)
-    corr_func_R_gsb  = zeropad(corr_func_R_gsb,zp)
+    corr_func_R_gsb  = zeropad(corr_func_R_gsb ,zp)
 
     corr_func_NR_se  = zeropad(corr_func_NR_se,zp)
-    corr_func_R_se   = zeropad(corr_func_R_se,zp)
+    corr_func_R_se   = zeropad(corr_func_R_se ,zp)
 
     corr_func_NR_esa = zeropad(corr_func_NR_esa,zp)
-    corr_func_R_esa  = zeropad(corr_func_R_esa,zp)
+    corr_func_R_esa  = zeropad(corr_func_R_esa ,zp)
+
+    corr_func_NR_esax = zeropad(corr_func_NR_esax,zp)
+    corr_func_R_esax  = zeropad(corr_func_R_esax ,zp)
 
     #######################################################
     ######### plot 2nd order correlation function #########
@@ -360,6 +437,9 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, zp
     spec2d_NR_esa = fftshift(fft((corr_func_NR_esa)))
     spec2d_R_esa  = fftshift(fft((corr_func_R_esa)))
 
+    spec2d_NR_esax = fftshift(fft((corr_func_NR_esax)))
+    spec2d_R_esax  = fftshift(fft((corr_func_R_esax)))
+
     println("done\n")
 
     println("############# ########################### #############");
@@ -370,20 +450,24 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, zp
     spec2d_gsb = spec2d_NR_gsb + circshift(reverse(spec2d_R_gsb,dims=2),(0,1))
     spec2d_se  = spec2d_NR_se  + circshift(reverse(spec2d_R_se ,dims=2),(0,1))
     spec2d_esa = spec2d_NR_esa + circshift(reverse(spec2d_R_esa,dims=2),(0,1))
+    spec2d_esax = spec2d_NR_esax + circshift(reverse(spec2d_R_esax,dims=2),(0,1))
 
     # sum rephasing and non-rephasing spectra individually
-    spec2d_r = circshift(reverse(spec2d_R_gsb,dims=2),(0,1)) +
-               circshift(reverse(spec2d_R_se ,dims=2),(0,1)) +
-               circshift(reverse(spec2d_R_esa,dims=2),(0,1));
+    spec2d_r = circshift(reverse(spec2d_R_gsb ,dims=2),(0,1)) +
+               circshift(reverse(spec2d_R_se  ,dims=2),(0,1)) +
+               circshift(reverse(spec2d_R_esa ,dims=2),(0,1))# +
+#               circshift(reverse(spec2d_R_esax,dims=2),(0,1));
 
     spec2d_nr = spec2d_NR_gsb +
                 spec2d_NR_se  +
-                spec2d_NR_esa;
+                spec2d_NR_esa #+
+#                spec2d_NR_esax;
 
     # calculate the total 2D spectrum (complex)
     spec2d = spec2d_gsb +
              spec2d_se  +
-             spec2d_esa;
+             spec2d_esa +
+             spec2d_esax;
 
     println("done\n")
 
@@ -412,17 +496,24 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, zp
         subplot(4,3,12); pcolormesh(spec2d_NR_esa);
         tight_layout()
         =#
-
-        figure(figsize=(10,3))
+        """
+        figure(figsize=(10,6))
         L = size(spec2d,1);
-        subplot(131); pcolormesh(real(spec2d_gsb)); title("GSB abs."); colorbar()
+        subplot(221); pcolormesh(real(spec2d_gsb)); title("GSB abs."); colorbar()
+        clim([-100, 100])
         plot([1:L;],[1:L;])
-        subplot(132); pcolormesh(real(spec2d_se)); title("SE abs."); colorbar()
+        subplot(222); pcolormesh(real(spec2d_se)); title("SE abs."); colorbar()
+        clim([-100, 100])
         plot([1:L;],[1:L;])
-        subplot(133); pcolormesh(real(spec2d_esa)); title("ESA abs."); colorbar()
+        subplot(223); pcolormesh(real(spec2d_esa)); title("ESA abs."); colorbar()
+        clim([-100, 100])
         tight_layout()
         plot([1:L;],[1:L;])
-
+        subplot(224); pcolormesh(real(spec2d_esax)); title("ESAx abs."); colorbar()
+        clim([-100, 100])
+        tight_layout()
+        plot([1:L;],[1:L;])
+        """
         return out
 
     else
@@ -490,6 +581,7 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
 
     ## use full transition dipole operator matrix
     μ = μa + μb
+    ## or not ...
     μ_ge = μa
     μ_ef = μb
 
@@ -509,11 +601,11 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
 
     # SELECTING ONLY DIAGONAL ELEMENTS AT THIS POINT ELIMINATES PATHWAYS
     # THAT OSCILLATE DURING t2
-    XX = true # get rid of off-diagonal elements during t2
+    XX = true   # get rid of off-diagonal elements during t2
     YY = false  # get rid of on-diagonal elements during t2
 
     # initialize output matrix
-    corr = zeros(length(tlist),length(tlist))
+    corr    = zeros(length(tlist),length(tlist))
     corr_cc = zeros(length(tlist),length(tlist))
 
 
@@ -521,32 +613,46 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
     # non-rephasing to ensure that emission is from the left of the double-
     # sided vertical Feynman diagram
     if pathway[1] == 'R'        # first interaction from right if rephasing
-        rho0 = rho0 * μ_ge
-        rho0_cc = μ_ge * rho0
+        #rho1    = rho0 * μ_ge
+        rho1    = rho0 * tri(μ_ge,"U")
+        #rho1_cc = μ_ge * rho0
+        rho1_cc = tri(μ_ge,"L") * rho0
     elseif pathway[1] == 'N'    # first interaction from left if non-rephasing
-        rho0 = μ_ge * rho0
-        rho0_cc = rho0 * μ_ge
+        #rho1    = μ_ge * rho0
+        rho1    = tri(μ_ge,"L") * rho0
+        #rho1_cc = rho0 * μ_ge
+        rho1_cc = rho0 * tri(μ_ge,"U")
     else
         error("cmds -- no pathway selected")
     end
 
     # define transition dipole operator to evaluate expectation value
     if pathway[end] == 'a' # if esa pathway use μb
-        μexp = -μb         # minus sign follows from Feynman diagrams
+        #μexp = -μb         # minus sign follows from Feynman diagrams
+        μexp    = -tri(μ_ef,"U")
+        μexp_cc = -μ_ef
+    elseif pathway[end] == 'e'
+        μexp    = tri(μ_ge,"U")
+        μexp_cc = tri(μ_ge,"L")
+    elseif pathway[end] == 'x'
+        μ_ef    =  μ_ge
+        μexp    = -μ_ge
+        μexp_cc = -μ_ge
+        pathway = chop(pathway)
     else
-        μexp = μa
+        μexp    =  μ_ge
+        μexp_cc =  μ_ge
     end
 
     # calculate evolution during t1(τ)
-    τ = tlist; tout, rho_τ = t_ev(τ,rho0,H,F)
-    τ = tlist; tout, rho_τ_cc = t_ev(τ,rho0_cc,H,F)
-
+    τ = tlist; tout, rho1_τ    = t_ev(τ,rho1,H,F)
+    τ = tlist; tout, rho1_τ_cc = t_ev(τ,rho1_cc,H,F)
 
     # now, use every rho(τ) as starting point to calculate second coherence
     # time (t) dependence. Note that first interaction with μ puts density
     # matrix back into a population without any time delay to the next
     # interaction (T=0)!
-    for i=1:length(rho_τ)
+    for i=1:length(rho1_τ)
 
         if pathway == "R_gsb"
             #------------------------#
@@ -554,156 +660,208 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
             # copy: (μ * ((rho0 * μ) * μ))
             #------------------------#
             # second field interaction A(τ)
-            temp_rho_a =      rho_τ[i]   * μ_ge
-            temp_rho_a_cc =   μ_ge          * rho_τ_cc[i]
+            #rho2    =   rho1_τ[i]     * μ_ge
+            rho2    =   rho1_τ[i]    * tri(μ_ge,"L")
+            #rho2_cc =   μ_ge         * rho1_τ_cc[i]
+    #         rho2_cc =   tri(μ_ge,"U")* rho1_τ_cc[i]
             # eliminate on-diagonal or off-diagonal elements
             if XX
-                temp_rho_a.data = tril(triu(temp_rho_a.data))
+                rho2.data = tril(triu(rho2.data))
+    #            rho2_cc.data = tril(triu(rho2_cc.data))
             elseif YY
-                temp_rho_a.data = tril(temp_rho_a.data,-1) + triu(temp_rho_a.data,1)
+                rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
+    #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
             else
             end
             # time evolution during t2(T)-time
             if T[end] != 0
-                tout, temp_rho_a = t_ev(T,temp_rho_a,H,F)
-                temp_rho_a = temp_rho_a[end]
-                tout, temp_rho_a_cc = t_ev(T,temp_rho_a_cc,H,F)
-                temp_rho_a_cc = temp_rho_a_cc[end]
+                tout, rho2_T = t_ev(T,rho2,H,F)
+                rho2 = rho2_T[end]
+    #            tout, rho2_T_cc = t_ev(T,rho2_cc,H,F)
+    #            rho2_cc = rho2_T_cc[end]
             end
             # third field interaction
-            temp_rho   = μ_ge * temp_rho_a
-            temp_rho_cc   = μ_ge * temp_rho_a_cc
+            #rho3   = μ_ge * rho2
+            rho3   = tri(μ_ge,"L")    * rho2
+            #rho3_cc   = μ_ge * rho2_cc
+    #        rho3_cc   = tri(μ_ge,"U") * rho2_cc
 
         elseif pathway == "NR_gsb"
             #-------------------------#
             # {μ * [μ * (μ * rho0)]}
             # copy: (μ * (μ * (μ * rho0)))
             #-------------------------#
-            temp_rho_a = μ_ge * rho_τ[i]
-            temp_rho_a_cc = rho_τ_cc[i] * μ_ge
+            #rho2 = μ_ge * rho1_τ[i]
+            rho2 = tri(μ_ge,"U") * rho1_τ[i]
+            #rho2_cc = rho1_τ_cc[i] * μ_ge
+    #        rho2_cc = rho1_τ_cc[i] * tri(μ_ge,"L")
+
             if XX
-                temp_rho_a.data = tril(triu(temp_rho_a.data))
+                rho2.data = tril(triu(rho2.data))
+    #            rho2_cc.data = tril(triu(rho2_cc.data))
             elseif YY
-                temp_rho_a.data = tril(temp_rho_a.data,-1) + triu(temp_rho_a.data,1)
+                rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
+    #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
             else
             end
 
             if T[end] != 0
-                tout, temp_rho_a = t_ev(T,temp_rho_a,H,F)
-                temp_rho_a = temp_rho_a[end]
-                tout, temp_rho_a_cc = t_ev(T,temp_rho_a_cc,H,F)
-                temp_rho_a_cc = temp_rho_a_cc[end]
+                tout, rho2_T = t_ev(T,rho2,H,F)
+                rho2 = rho2_T[end]
+    #            tout, rho2_T_cc = t_ev(T,rho2_cc,H,F)
+    #            rho2_cc = rho2_T_cc[end]
             end
 
-            temp_rho   = μ_ge * temp_rho_a
-            temp_rho_cc = temp_rho_a_cc * μ_ge
+            #rho3   = μ_ge * rho2
+            rho3   = tri(μ_ge,"L") * rho2
+            #rho3_cc = rho2_cc * μ_ge
+    #        rho3_cc = rho2_cc * tri(μ_ge,"U")
 
         elseif pathway == "R_se"
             #------------------------------#
             # {[μ * (rho0 * μ)] * μ} + cc
             # copy: ((μ * (rho0 * μ)) * μ)
             #------------------------------#
-            temp_rho_a = μ_ge * rho_τ[i]
-            temp_rho_a_cc = rho_τ_cc[i] * μ_ge
+            #rho2 = μ_ge * rho1_τ[i]
+            rho2 = tri(μ_ge,"L") * rho1_τ[i]
+            #rho2_cc = rho1_τ_cc[i] * μ_ge
+    #        rho2_cc = rho1_τ_cc[i] * tri(μ_ge,"U")
+
             if XX
-                temp_rho_a.data = tril(triu(temp_rho_a.data))
+                rho2.data = tril(triu(rho2.data))
+    #            rho2_cc.data = tril(triu(rho2_cc.data))
             elseif YY
-                temp_rho_a.data = tril(temp_rho_a.data,-1) + triu(temp_rho_a.data,1)
+                rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
+    #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
             else
             end
 
             if T[end] != 0
-                tout, temp_rho_a = t_ev(T,temp_rho_a,H,F)
-                temp_rho_a = temp_rho_a[end]
-                tout, temp_rho_a_cc = t_ev(T,temp_rho_a_cc,H,F)
-                temp_rho_a_cc = temp_rho_a_cc[end]
+                tout, rho2_T = t_ev(T,rho2,H,F)
+                rho2 = rho2_T[end]
+    #            tout, rho2_T_cc = t_ev(T,rho2_cc,H,F)
+    #            rho2_cc = rho2_T_cc[end]
             end
 
-            temp_rho   =       temp_rho_a * μ_ge
-            temp_rho_cc = μ_ge * temp_rho_a
+            #rho2.data[1,1] = 0
+
+            #rho3   =       rho2 * μ_ge
+            rho3   =       rho2 * tri(μ_ge,"L")
+            #rho3_cc = μ_ge * rho2
+    #        rho3_cc = tri(μ_ge,"L") * rho2
 
         elseif pathway == "NR_se"
             #------------------------------#
             # {[(μ * rho0) * μ] * μ} + cc
             # copy: (((μ * rho0) * μ) * μ)
             #------------------------------#
-            temp_rho_a =      rho_τ[i]   * μ_ge
-            temp_rho_a_cc = μ_ge * rho_τ_cc[i]
+            #rho2 =      rho1_τ[i]   * μ_ge
+            rho2 =      rho1_τ[i]   * tri(μ_ge,"U")
+            #rho2_cc = μ_ge * rho1_τ_cc[i]
+    #        rho2_cc = tri(μ_ge,"L") * rho1_τ_cc[i]
+
             if XX
-                temp_rho_a.data = tril(triu(temp_rho_a.data))
+                rho2.data = tril(triu(rho2.data))
+    #            rho2_cc.data = tril(triu(rho2_cc.data))
             elseif YY
-                temp_rho_a.data = tril(temp_rho_a.data,-1) + triu(temp_rho_a.data,1)
+                rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
+    #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
             else
             end
 
             if T[end] != 0
-                tout, temp_rho_a = t_ev(T,temp_rho_a,H,F)
-                temp_rho_a = temp_rho_a[end]
-                tout, temp_rho_a_cc = t_ev(T,temp_rho_a_cc,H,F)
-                temp_rho_a_cc = temp_rho_a_cc[end]
+                tout, rho2_T = t_ev(T,rho2,H,F)
+                rho2 = rho2_T[end]
+    #            tout, rho2_T_cc = t_ev(T,rho2_cc,H,F)
+    #            rho2_cc = rho2_T_cc[end]
             end
 
-            temp_rho   =       temp_rho_a * μ_ge
-            temp_rho_cc = μ_ge * temp_rho_a
+            #rho2.data[1,1] = 0
+
+            #rho3   =       rho2 * μ_ge
+            rho3   =       rho2 * tri(μ_ge,"L")
+            #rho3_cc = μ_ge * rho2
+    #        rho3_cc = tri(μ_ge,"U") * rho2
 
         elseif pathway == "R_esa"
+            #μ_ef = μ_ge# + μ_ef # after relaxation, reabsorption is part of esa (!?)
             #------------------------------#
             # {μ * [μ * (rho0 * μ)]} + cc
             # copy: (μ * (μ * (rho0 * μ)))
             #------------------------------#
-            temp_rho_a = μ_ge * rho_τ[i]
-            temp_rho_a_cc = rho_τ_cc[i] * μ_ge
+            #rho2 = μ_ge * rho1_τ[i]
+            rho2 = tri(μ_ge,"L")    * rho1_τ[i]
+            #rho2_cc = rho1_τ_cc[i]  * μ_ge
+    #        rho2_cc = rho1_τ_cc[i]  * tri(μ_ge,"U")
+
             if XX
-                temp_rho_a.data = tril(triu(temp_rho_a.data))
+                rho2.data = tril(triu(rho2.data))
+    #            rho2_cc.data = tril(triu(rho2_cc.data))
             elseif YY
-                temp_rho_a.data = tril(temp_rho_a.data,-1) + triu(temp_rho_a.data,1)
+                rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
+    #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
             else
             end
 
             if T[end] != 0
-                tout, temp_rho_a = t_ev(T,temp_rho_a,H,F)
-                temp_rho_a = temp_rho_a[end]
-                tout, temp_rho_a_cc = t_ev(T,temp_rho_a_cc,H,F)
-                temp_rho_a_cc = temp_rho_a_cc[end]
+                tout, rho2_T = t_ev(T,rho2,H,F)
+                rho2 = rho2_T[end]
+    #            tout, rho2_T_cc = t_ev(T,rho2_cc,H,F)
+    #            rho2_cc = rho2_T_cc[end]
             end
 
-            temp_rho   = μ_ef * temp_rho_a
-            temp_rho_cc = temp_rho_a_cc * μ_ef
+            #rho3   = μ_ef * rho2
+            rho3    = tri(μ_ef,"L") * rho2
+            #rho3_cc = rho2_cc       * μ_ef
+    #        rho3_cc = rho2_cc       * tri(μ_ef,"U")
 
         elseif pathway == "NR_esa"
+            #μ_ef = μ_ge #+ μ_ef
             #-----------------------------#
             # {μ * [(μ * rho0) * μ]} + cc
             # copy: (μ * ((μ * rho0) * μ))
             #-----------------------------#
-            temp_rho_a =      rho_τ[i]   * μ_ge
-            temp_rho_a_cc = μ_ge * rho_τ_cc[i]
+            #rho2 =      rho1_τ[i]   * μ_ge
+            rho2 =      rho1_τ[i]   * tri(μ_ge,"U")
+            #rho2 =      μ_ge * rho1_τ[i]
+
+            #rho2_cc = μ_ge * rho1_τ_cc[i]
+    #        rho2_cc = tri(μ_ge,"L") * rho1_τ_cc[i]
+            #rho2_cc = rho1_τ_cc[i] * μ_ge
+
             if XX
-                temp_rho_a.data = tril(triu(temp_rho_a.data))
+                rho2.data = tril(triu(rho2.data))
+    #            rho2_cc.data = tril(triu(rho2_cc.data))
             elseif YY
-                temp_rho_a.data = tril(temp_rho_a.data,-1) + triu(temp_rho_a.data,1)
+                rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
+    #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
             else
             end
 
             if T[end] != 0
-                tout, temp_rho_a = t_ev(T,temp_rho_a,H,F)
-                temp_rho_a = temp_rho_a[end]
-                tout, temp_rho_a_cc = t_ev(T,temp_rho_a_cc,H,F)
-                temp_rho_a_cc = temp_rho_a_cc[end]
+                tout, rho2_T = t_ev(T,rho2,H,F)
+                rho2 = rho2_T[end]
+    #            tout, rho2_T_cc = t_ev(T,rho2_cc,H,F)
+    #            rho2_cc = rho2_T_cc[end]
             end
 
-            temp_rho   = μ_ef * temp_rho_a
-            temp_rho_cc = temp_rho_a_cc * μ_ef
+            #rho3    = μ_ef * rho2
+            rho3    = tri(μ_ef,"L") * rho2
+            #rho3_cc = rho2_cc * μ_ef
+    #        rho3_cc = rho2_cc * tri(μ_ef,"U")
 
         end
 
         # calculate time evolution of ρ during detection time t
-        t = tlist; tout, rhot_temp = t_ev(t,temp_rho,H,F)
-        t = tlist; tout, rhot_temp_cc = t_ev(t,temp_rho_cc,H,F)
+        t = tlist; tout, rho3_t     = t_ev(t,rho3,H,F)
+
+    #    t = tlist; tout, rho3_t_cc  = t_ev(t,rho3_cc,H,F)
 
 
-        # calc. exp. v. for GSB and SE (μexp = μ12) and for ESA ()μexp = μ23)
-        corr[i,:] = real(expect(μexp,conj(rhot_temp)))
-        corr_cc[i,:] = real(expect(μexp,conj(rhot_temp_cc)))
+
+        # calc. exp. v. for GSB and SE (μexp = μ12) and for ESA (μexp = μ23)
+        corr[i,:]    = real(expect(μexp,conj(rho3_t)))
+    #    corr_cc[i,:] = real(expect(μexp_cc,conj(rho3_t_cc)))
 
         #corr = corr + corr_cc
 
@@ -720,27 +878,60 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
                 println("###################### DEBUG ######################")
                 println("###################################################\n")
                 println("showing density matrices from during the evolution.\n")
-                println(i)
+                println("Which path ?")
                 println(pathway)
-                println("μ")
-                println(dense(μ))
+                println(" ")
+                println("μ_ge")
+                println(dense(μ_ge))
+                println(" ")
+                println("μ_ef")
+                println(dense(μ_ef))
+                println(" ")
                 println("rho0")
                 println(rho0)
-                println(μ*rho0)
-                println(temp_rho_a)
-                println("*****")
-                println(rho_τ[i])
-                #println(temp_rho_a[1])
-                println("after T evolution")
-                #println(temp_rho_a[end])
-                println(temp_rho)
-                println(μexp*rhot_temp[1])
+                println(" ")
+                println("rho1")
+                println(rho1)
+                println(" ")
+                if T[end] != 0
+                    println(" ")
+                    println("rho2_T[1] (before T evolution)")
+                    println(rho2_T[1])
+                end
+                println("rho2")
+                println(rho2)
+                println(" ")
+                println("rho3")
+                println(rho3)
+                println(" ")
+                println("μexp")
+                println(μexp)
+                println(" ")
+                print("μexp * rho3")
+                println(μexp * rho3)
+                println(" ")
                 println("\n")
             end
         end
     end
     print(" done!\n")
     return corr
+end
+
+"""
+    out = tri(dat, uplo)
+
+function used internally by cmds.jl to select upper triagular (uplo="U") or lower
+triangular (uplo="L") matrix.
+"""
+function tri(dat,uplo)
+    out = copy(dat)
+    if uplo == "L"
+        out.data = tril(out.data)
+    elseif uplo == "U"
+        out.data = triu(out.data)
+    end
+    return out;
 end
 
 end # module
