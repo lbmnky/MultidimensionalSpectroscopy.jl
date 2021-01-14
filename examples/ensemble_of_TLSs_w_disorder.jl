@@ -52,10 +52,10 @@ Sp = dagger(Sm)
 temp = one(sm)
 temp.data[2,2] = 1/(2)
 #j_ops = [tensor(circshift(append!([sm],repeat([one(sm)],num_of_TLSs-1)),i-1)...) for i in 1:num_of_TLSs]
-j_ops = [tensor(circshift(append!([sm],repeat([temp],num_of_TLSs-1)),i-1)...) for i in 1:num_of_TLSs]
+j_ops = 1 * [tensor(circshift(append!([sm],repeat([temp],num_of_TLSs-1)),i-1)...) for i in 1:num_of_TLSs]
 #j_ops = [tensor(circshift(append!([sm],[j*one(sm) for j in 1:num_of_TLSs-1 ]),i-1)...) for i in 1:num_of_TLSs]
 
-j_ops_b = [tensor(circshift(append!([sp,sm],repeat([temp],num_of_TLSs-2)),i-1)...) for i in 1:num_of_TLSs]
+j_ops_b = 1.2 * [tensor(circshift(append!([sp,sm],repeat([temp],num_of_TLSs-2)),i-1)...) for i in 1:num_of_TLSs]
 pop!(j_ops_b)
 append!(j_ops,j_ops_b)
 # transition dipole operators
@@ -225,7 +225,7 @@ if calc_2d
     zp = 10 # zeropad up to 2^zp
 
     ## calculate 2D spectra at
-    T = [0, 5, 10, 20] #fs
+    T = [0, 15] #fs
 
     out2d = Array{cmds.out2d}(undef, length(T))
 
