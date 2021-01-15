@@ -22,25 +22,25 @@ Type ``?cmds.<function>`` into the REPL to access the documentation for a certai
 
 ### Available functions:
 
-- create_colormap: creates a blue-white-green-red colormap with zero values being white
+- __create_colormap__: creates a blue-white-green-red colormap with zero values being white
 
-- zeropad: zeropadding of time domain data before Fourier transformation into spectral domain
+- __zeropad__: zeropadding of time domain data before Fourier transformation into spectral domain
 
-- interpt: interpolate time vector after zeropadding 
+- __interpt__: interpolate time vector after zeropadding
 
-- make2Dspectra: invokes cmds.correlations to calculate different signals
+- __make2Dspectra__: invokes cmds.correlations to calculate different signals
 
-- correlations: calculate time evolution and interaction with laser pulses
+- __correlations__: calculate time evolution and interaction with laser pulses
 
-- view_dm_evo: quick way to visualize evolution of density matrix
+- __view_dm_evo__: quick way to visualize evolution of density matrix
 
-- save_2d: saves 2D plots to 01_Output
+- __save_2d__: saves 2D plots to 01_Output
 
-- plot2d: plots 2D data in out2d
+- __plot2d__: plots 2D data in out2d
 
-- crop2d: crops 2D data to reduce size
+- __crop2d__: crops 2D data to reduce size
 
-- tri: select upper or lower triangular matrix, used to simplify pathways
+- __tri__: select upper or lower triangular matrix, used to simplify pathways
 
 ### How to use:
 
