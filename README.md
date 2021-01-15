@@ -26,7 +26,7 @@ Type ``?cmds.<function>`` into the REPL to access the documentation for a certai
 
 - zeropad: zeropadding of time domain data before Fourier transformation into spectral domain
 
-- interpt
+- interpt: interpolate time vector after zeropadding 
 
 - make2Dspectra: invokes cmds.correlations to calculate different signals
 
