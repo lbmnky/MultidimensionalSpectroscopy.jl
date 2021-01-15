@@ -1,4 +1,4 @@
-# CMDS
+# CMDS.jl
 
 Simulate coherent multidimensional spectroscopy signals from quantum mechanical models.
 
@@ -22,23 +22,25 @@ Type ``?cmds.<function>`` into the REPL to access the documentation for a certai
 
 ### Available functions:
 
-- create_colormap
+- create_colormap: creates a blue-white-green-red colormap with zero values being white
 
-- zeropad
+- zeropad: zeropadding of time domain data before Fourier transformation into spectral domain
 
 - interpt
 
-- make2Dspectra
+- make2Dspectra: invokes cmds.correlations to calculate different signals
 
-- correlations
+- correlations: calculate time evolution and interaction with laser pulses
 
-- view_dm_evo
+- view_dm_evo: quick way to visualize evolution of density matrix
 
-- save_2d
+- save_2d: saves 2D plots to 01_Output
 
-- plot2d
+- plot2d: plots 2D data in out2d
 
-- crop2d
+- crop2d: crops 2D data to reduce size
+
+- tri: select upper or lower triangular matrix, used to simplify pathways
 
 ### How to use:
 

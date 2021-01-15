@@ -1,7 +1,7 @@
 module cmds
 
 export create_colormap, zeropad, interpt, make2Dspectra, correlations,
-        view_dm_evo, save_2d, plot2d, crop2d
+        view_dm_evo, save_2d, plot2d, crop2d, tri
 
 using QuantumOptics, FFTW, LinearAlgebra, PyPlot, Colors, DelimitedFiles, Printf
 
@@ -21,7 +21,7 @@ norm_spec : normalize to abs.(maximum(data)), where data is the spectrum to
 scaling   : pick z-scaling ("lin", "tan", "cube", "asinh")
 
 """
-function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin")
+function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", norm=0)
 
     ## select 2D spectrum to plot
     if repr == "absorptive"
@@ -56,6 +56,12 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin")
         lvls_ticks = [-1:0.2:1;] * maximum(abs.([m, M]))
     else
         lvls = 0.001 * lvls;
+    end
+
+    # normalize to global maximum with evolution time T scan
+    if norm == 0
+    else
+        lvls = lvls ./ maximum(lvls) * norm;
     end
 
     ## plot data as filled contour
@@ -567,17 +573,17 @@ Calculate the response functions necessary for 2D spectroscopy.
 
 # Output
 * 'corr'    : 2D correlation function
+
+# Additional considerations:
+
+* GS        : ground state
+* ESs       : excited state or states
+* FS        : final state
+* μa and μb : TDMs, coupling states, such that GS <-μa-> ESs <-μb-> FS
+* F         : is either list of collapse operators (c_ops; Lindblad) or
+            of relaxation tensor (R, Redfield)
 """
 function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
-
-    # GS        : ground state
-    # ESs       : excited state or states
-    # FS        : final state
-    # μa and μb : TDMs, coupling states
-    # GS <-μa-> ESs <-μb-> FS
-    # F         : is either list of collapse operators (c_ops; Lindblad) or
-    #             of relaxation tensor (R, Redfield)
-    #
 
     ## use full transition dipole operator matrix
     μ = μa + μb
