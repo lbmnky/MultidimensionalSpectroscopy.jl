@@ -116,6 +116,8 @@ Of course, the latter is still greatly simplified.
 
 As an intermezzo, QuantumOptics.jl can also be used to calculate Franck-Condon factors of a transition between Morse potentials:
 
+![FCF Morse Potential](/example_images/FCfactorsMorsePot1.png)
+
 ![FCF Morse Potential](/example_images/FCfactorsMorsePot.png)
 
 TODO 2D with Morse potential
