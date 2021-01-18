@@ -139,3 +139,11 @@ Here, ω<sub>r</sub> is the energy/frequency/... of the cavity mode, a<sup>†</
 ### Tavis-Cummings
 
 In order to go beyond the Jaynes-Cummings model ...
+
+### Disentangling GSB, SE and ESA contributions
+
+CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.se) and ESA (out2d.esa) components. In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d_nr) parts of the signal are available.
+
+### Does it wiggle ?
+
+So far, coherence during the population time T were eliminated by setting off-diagonal elements of the density matrix to zero, directly after the second interaction with μ. TBC ...
