@@ -87,6 +87,15 @@ CMDS.jl uses QuantumOptics.jl to calculate the 3rd-order response functions in a
 
 The 2D spectrum shows the ground state bleach and stimulated emission (green/yellow/red) of the ... transition on the diagonal and the excited state absorption (blue/purple) of the ... transition as the off-diagonal peak.
 
+
+### coupledDimer.jl with slightly detuned monomers and reduced coupling
+
+...
+
+Evolution during the population time leads to a decrease in signal intensity:
+
+![coupledDimer evolution](example_images/coupledDimer2D_evolution.png)
+
 ### displaced_harmonic_oscillator_model.jl
 
 Another [textbook example](chem.libretexts.org/Bookshelves/Physical_and_Theoretical_Chemistry_Textbook_Maps/Book%3A_Time_Dependent_Quantum_Mechanics_and_Spectroscopy_(Tokmakoff)/13%3A_Coupling_of_Electronic_and_Nuclear_Motion/13.01%3A_The_Displaced_Harmonic_Oscillator_Model) is the displaced oscillator (DO) model. [Here](examples/displaced_harmonic_oscillator_model.jl), two electronic levels with vibrational sub-levels are coupled and yield the correlation function and spectrum:
