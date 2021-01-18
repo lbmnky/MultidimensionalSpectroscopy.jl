@@ -142,13 +142,21 @@ In order to go beyond the Jaynes-Cummings model ...
 
 ### Disentangling GSB, SE and ESA contributions
 
-CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.se) and ESA (out2d.esa) components. In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d_nr) parts of the signal are available:
+CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.se) and ESA (out2d.esa) components:
 
-![GSB](/example_images/coupledDimer_GSB.png)
+<!--![GSB](/example_images/coupledDimer_GSB.png)-->
 
-![SE](/example_images/coupledDimer_SE.png)
+<img src="/example_images/coupledDimer_GSB.png" width="150">
 
-![ESA](/example_images/coupledDimer_ESA.png)
+<img src="/example_images/coupledDimer_SE.png" width="150">
+
+<img src="/example_images/coupledDimer_ESA.png" width="150">
+
+<!--![SE](/example_images/coupledDimer_SE.png)-->
+
+<!--![ESA](/example_images/coupledDimer_ESA.png)-->
+
+In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d_nr) parts of the signal are available:
 
 ![rephasing](example_images/coupledDimer_r.png)
 
