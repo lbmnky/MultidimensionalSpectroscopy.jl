@@ -60,7 +60,7 @@ end
 
 with tlist, rho0, H, F, ...
 
-Using multithreading, several population time steps can be evaluated simultaneously (make sure to disable all output plots within cmds.make2Dspectra(), as these might crash the execution):
+Using __multithreading__, several population time steps can be evaluated simultaneously (make sure to disable all output plots within cmds.make2Dspectra(), as these might crash the execution):
 ```julia
 Threads.@threads for i = 1:length(T)
     out2d[i] = cmds.make2Dspectra(...)
