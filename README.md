@@ -12,9 +12,9 @@ The module [CMDS.jl](/cmds.jl) contains the necessary functions to calculate 2D 
 
 CMDS requires the Julia language and [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl), which can be installed from via the standard sources:
 
-[Julia](https://docs.julialang.org/en/v1/manual/getting-started/)
+- [Julia](https://docs.julialang.org/en/v1/manual/getting-started/)
 
-[QoJulia](https://docs.qojulia.org/installation/)
+- [QoJulia](https://docs.qojulia.org/installation/)
 
 ## CMDS.jl - Functions
 
@@ -77,42 +77,53 @@ The following [/examples](/examples) are available.
 
 ### coupled_dimer.jl
 
-The properties (angles, coupling strength, etc.) of a coupled dimer system are calculated and QuantumOptics.jl is used to calculate the correlation function and linear absorption spectrum.
+The properties (angles, coupling strength, etc.) of a coupled dimer system are calculated (see [/examples/coupled_dimer.jl](/examples/coupled_dimer.jl) for details) and QuantumOptics.jl is used to calculate the correlation function and linear absorption spectrum. The output provides the dimer geometry, distribution of the transition dipole moment strength, the system energy level scheme, the correlation function and spectrum.
 
 ![coupledDimer](/example_images/coupledDimer.png)
 
-CMDS.jl uses QuantumOptics.jl to calculate the response functions in a four-wave mixing experiment and calculates the expected 2D spectrum.
+CMDS.jl uses QuantumOptics.jl to calculate the 3rd-order response functions in a four-wave mixing formalism and calculates the expected 2D spectrum.
 
 ![coupledDimer 2D spectrum](/example_images/coupledDimer2D.png)
 
+The 2D spectrum shows the ground state bleach and stimulated emission (green/yellow/red) of the ... transition on the diagonal and the excited state absorption (blue/purple) of the ... transition as the off-diagonal peak.
+
 ### displaced_harmonic_oscillator_model.jl
 
-[text]
+Another [textbook example](chem.libretexts.org/Bookshelves/Physical_and_Theoretical_Chemistry_Textbook_Maps/Book%3A_Time_Dependent_Quantum_Mechanics_and_Spectroscopy_(Tokmakoff)/13%3A_Coupling_of_Electronic_and_Nuclear_Motion/13.01%3A_The_Displaced_Harmonic_Oscillator_Model) is the displaced oscillator (DO) model. [Here](examples/displaced_harmonic_oscillator_model.jl), two electronic levels with vibrational sub-levels are coupled and yield the correlation function and spectrum:
 
 ![displacedHarmonicOscillator](/example_images/displHarmOsc.png)
 
+Again, using ``CMDS.jl`` we can calculate the expected 2D spectrum at ``T=0`` ...
+
 ![displacedHarmonicOscillator 2D spectrum](/example_images/displHarmOsc2D.png)
+
+... and its temporal evolution.
 
 ![Evolution of displacedHarmonicOscillator 2D spectrum](/example_images/displHarmOsc2D_new.png)
 
+Of course, the latter is still greatly simplified.
 
 ### FCF_morse-potential.jl
 
-[text]
+As an intermezzo, QuantumOptics.jl can also be used to calculate Franck-Condon factors of a transition between Morse potentials:
 
 ![FCF Morse Potential](/example_images/FCfactorsMorsePot.png)
+
+TODO 2D with Morse potential
 
 ### Jaynes-Cummings model
 
 The coupling between a quantized optical field and a two-level system is described by the Jaynes-Cummings Hamiltonian
 
-H = ωᵣ a<sup>†</sup> a + ωₐ σ₊ σ₋ + ( a<sup>†</sup> σ₋ + a σ₊ )
+H = ω<sub>r</sub> a<sup>†</sup> a + ω<sub>a</sub> σ<sub>+</sub> σ<sub>-</sub> + ( a<sup>†</sup> σ<sub>-</sub> + a σ<sub>+</sub> )
+
+or for you to copy:
 
 ```julia
 H = wc * at * a + wa * sp * sm + g * (at * sm + a * sp)
 ```
 
-blabla
+Here, ω<sub>r</sub> is the energy/frequency/... of the cavity mode, a<sup>†</sup>(a) is the  ... and σ<sub>+</sub>(σ<sub>-</sub>)  the ... . The calculated linear absorption spectrum of the system looks pointy:
 
 ![Jaynes-Cummings](/example_images/JaynesCummingsSpectrum.png)
 
