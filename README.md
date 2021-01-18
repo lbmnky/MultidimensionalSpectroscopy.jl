@@ -158,9 +158,9 @@ CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.s
 <!--![GSB](/example_images/coupledDimer_GSB.png)-->
 
 <p float="left">
-<img src="/example_images/coupledDimer_GSB.png" width="250"/>
-<img src="/example_images/coupledDimer_SE.png" width="250"/>
-<img src="/example_images/coupledDimer_ESA.png" width="250"/>
+<img src="/example_images/coupledDimer_GSB.png" width="300"/>
+<img src="/example_images/coupledDimer_SE.png"  width="300"/>
+<img src="/example_images/coupledDimer_ESA.png" width="300"/>
 </p>
 
 <!--![SE](/example_images/coupledDimer_SE.png)-->
