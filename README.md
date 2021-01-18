@@ -101,7 +101,7 @@ CMDS.jl uses QuantumOptics.jl to calculate the response functions in a four-wave
 
 The coupling between a quantized optical field and a two-level system is described by the Jaynes-Cummings Hamiltonian
 
-H = ωᵣ a† a + ωₐ σ₊ σ₋ + ( a† σ₋ + a σ₊ )
+H = ωᵣ a<sup>†</sup> a + ωₐ σ₊ σ₋ + ( a<sup>†</sup> σ₋ + a σ₊ )
 
 ```julia
 H = wc * at * a + wa * sp * sm + g * (at * sm + a * sp)
