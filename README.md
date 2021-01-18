@@ -157,10 +157,10 @@ CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.s
 
 <!--![GSB](/example_images/coupledDimer_GSB.png)-->
 
-<p float="left">
-<img src="/example_images/coupledDimer_GSB.png" width="300"/>
-<img src="/example_images/coupledDimer_SE.png"  width="300"/>
-<img src="/example_images/coupledDimer_ESA.png" width="300"/>
+<p float="center">
+<img src="/example_images/coupledDimer_GSB.png" width="290"/>
+<img src="/example_images/coupledDimer_SE.png"  width="290"/>
+<img src="/example_images/coupledDimer_ESA.png" width="290"/>
 </p>
 
 <!--![SE](/example_images/coupledDimer_SE.png)-->
@@ -169,7 +169,7 @@ CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.s
 
 In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d_nr) parts of the signal are available:
 
-<p float="left">
+<p float="center">
 <img src="/example_images/coupledDimer_r.png" width="350"/>
 <img src="/example_images/coupledDimer_nr.png" width="350"/>
 </p>
