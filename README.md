@@ -170,8 +170,8 @@ CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.s
 In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d_nr) parts of the signal are available:
 
 <p float="left">
-<img src="/example_images/coupledDimer_r.png" width="250"/>
-<img src="/example_images/coupledDimer_nr.png" width="250"/>
+<img src="/example_images/coupledDimer_r.png" width="350"/>
+<img src="/example_images/coupledDimer_nr.png" width="350"/>
 </p>
 
 ### Does it wiggle ?
