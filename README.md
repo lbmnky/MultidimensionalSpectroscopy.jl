@@ -4,9 +4,9 @@ Simulate coherent multidimensional spectroscopy signals from quantum mechanical 
 
 ## Introduction
 
-The code relies primarily on [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl) and a tutorial can be found [here](https://docs.qojulia.org/). Further examples and functionalities are found the Python project [QuTiP](http://qutip.org/).
+The code relies primarily on [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl), which is well described [here](https://docs.qojulia.org/). Further helpful examples and functionalities are found the Python project [QuTiP](http://qutip.org/).
 
-The module [CMDS.jl](/cmds.jl) contains the necessary functions to calculate 2D spectra and will be described below. [examples/](/examples) shows example scenarios.
+The module [CMDS.jl](/cmds.jl) contains the necessary functions to calculate 2D spectra from QM models and will be described below. [examples/](/examples) shows example scenarios.
 
 ## Installation
 
@@ -44,13 +44,17 @@ Type ``?cmds.<function>`` into the REPL to access the documentation for a certai
 
 ### How to use:
 
-initialize output array
+Set up your QM model of interest!
 
-`` out2d = Array{cmds.out2d}(undef, length(T)) ``
+To calculate 2D spectra first initialize the output array
 
-where T is a vector containing population time steps.
+```julia
+out2d = Array{cmds.out2d}(undef, length(T))
+```
 
-Next call `` cmds.make2dspectra `` in a for loop
+where `` T = [0., 5., 10., ...] `` is a vector containing population/evolution time steps.
+
+Next call `` cmds.make2dspectra() `` in a for loop
 
 ```julia
 for i = 1:length(T)
@@ -58,14 +62,15 @@ for i = 1:length(T)
 end
 ```
 
-with tlist, rho0, H, F, ...
+with ``tlist`` being the coherence/detection time steps, ``rho0`` the equilibrium/ground state density matrix, ``H`` the system Hamiltonian, ``F`` the jump operator (Lindblad operator) or the Redfield tensor, ``μ12`` the transition dipole operator between the ground and single excited states, and ``μ23`` the transition dipole operator between the single and double excited states. ``T[i]`` is the current population time. The option ``"lindblad"`` or ``"redfield"`` selects which ... to use. ``debug=true`` activates the debugging output and ``zp`` is the zero padding value of 10<sup>zp</sup>.
 
-Using __multithreading__, several population time steps can be evaluated simultaneously (make sure to disable all output plots within cmds.make2Dspectra(), as these might crash the execution):
+Using __multithreading__, several population time steps can be evaluated simultaneously:
 ```julia
 Threads.@threads for i = 1:length(T)
     out2d[i] = cmds.make2Dspectra(...)
 end
 ```
+Make sure to disable all output plots within ``cmds.make2Dspectra()`` when using __multithreading__, as these might crash the execution.
 ## Examples
 
 The following [/examples](/examples) are available.
