@@ -156,7 +156,7 @@ In order to go beyond the Jaynes-Cummings model ...
 CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.se) and ESA (out2d.esa) components:
 
 <!--![GSB](/example_images/coupledDimer_GSB.png)-->
-
+test
 <p float="center">
 <img src="/example_images/coupledDimer_GSB.png" width="280"/>
 <img src="/example_images/coupledDimer_SE.png"  width="280"/>
