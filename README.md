@@ -82,7 +82,7 @@ CMDS.jl uses QuantumOptics.jl to calculate the response functions in a four-wave
 
 ### displaced_harmonic_oscillator_model.jl
 
-[text]
+[text]aabbbbbbcccccdddddddeeeeeeffffff
 
 ![displacedHarmonicOscillator](/example_images/displHarmOsc.png)
 
