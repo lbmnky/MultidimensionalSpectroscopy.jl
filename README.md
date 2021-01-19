@@ -145,11 +145,23 @@ Here, ω<sub>r</sub> is the energy/frequency/... of the cavity mode, a<sup>†</
 
 ### Ensemble of two-level systems with disorder
 
+In order to study the effect of disorder on the 2D signal [examples\ensemble_of_TLSs_w_disorder.jl](examples\ensemble_of_TLSs_w_disorder.jl) creates a composite Hamiltonian of ``num_of_TLSs`` two-level systems, whose energies are distributed by the function used to create ``disorder``. For a Gaussian distribution of energies and 5 ``num_of_TLSs = 5`` the energy diagram looks as follows:
+
 ![ensemble Elevels](example_images/ensemble_energiesLevels.png)
+
+and the relevant single excited manifold
+
+![ensemble Elevels](example_images/ensemble_energiesLevelsZoom.png)
+
+This system leads to the following correlation function and absorption spectrum  with the Lindblad-operator ....
 
 ![ensemble spectrum](example_images/ensemble_corrSpec.png)
 
+... and the system dynamics:
+
 ![ensemble relaxation](example_images/ensemble_relaxation.png)
+
+The resulting 2D spectrum is characterized by an elongated diagonal peak, and relaxation to the lowest excited state leads to sub-diagonal crosspeaks.
 
 ![ensemble 2D](example_images/ensemble_2D.png)
 
@@ -185,6 +197,11 @@ In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d
 <img src="/example_images/coupledDimer_r.png" width="350"/>
 <img src="/example_images/coupledDimer_nr.png" width="350"/>
 </p>
+
+
+### Convolution with laser spectrum
+
+
 
 ### Does it wiggle ?
 
