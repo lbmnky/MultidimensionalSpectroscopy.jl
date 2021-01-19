@@ -145,7 +145,19 @@ Here, ω<sub>r</sub> is the energy/frequency/... of the cavity mode, a<sup>†</
 
 ### Ensemble of two-level systems with disorder
 
-...
+![ensemble Elevels](example_images/ensemble_energiesLevels.png)
+
+![ensemble spectrum](example_images/ensemble_corrSpec.png)
+
+![ensemble relaxation](example_images/ensemble_relaxation.png)
+
+![ensemble 2D](example_images/ensemble_2D.png)
+
+#### Evolution of density matrix
+
+Using ``cmds.view_dm_evo()`` you can visualize the temporal (T) evolution of the system density matrix.
+
+![dm evo](/example_images/ensemble_dmEvo.png)
 
 ### Tavis-Cummings
 
