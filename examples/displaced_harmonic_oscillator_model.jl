@@ -50,7 +50,7 @@ D = displace(b_vib,d)
 
 # ground states
 Eg = 0
-ωg = .1
+ωg = .2
 Hg_el = Eg * j12 * j21     # == HG = g * Eg ⊗ dagger(g)
 Hg_vib = ωg * (at*a + one(b_vib) * 1/2)
 Hg = Hg_el ⊗ one(b_vib) + one(b_tls) ⊗ Hg_vib
@@ -93,7 +93,7 @@ x = [-1:0.1:2*d;]
 #xx = PositionBasis(0,10,200)
 #xxx = position(xx)
 
-m = 500            # arbitrary
+m = 100            # arbitrary
 f = 1/2 * m * ωg^2
 plot(x,f*x.^2)
 scatter(zeros(Int8(floor(N/2))) .+ d, energies[end-Int8(floor(N/2))+1:end])
