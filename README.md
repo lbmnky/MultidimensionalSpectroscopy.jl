@@ -1,6 +1,6 @@
 # CMDS.jl
 
-Simulate coherent multidimensional spectroscopy signals from quantum mechanical models.
+__Simulate coherent multidimensional spectroscopy signals from quantum mechanical models.__
 
 ## Introduction
 
