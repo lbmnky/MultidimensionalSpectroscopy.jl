@@ -19,6 +19,8 @@ repr      : pick a representation ("absorptive", "dispersive", "absolute")
 norm_spec : normalize to abs.(maximum(data)), where data is the spectrum to
             be plotted
 scaling   : pick z-scaling ("lin", "tan", "cube", "asinh")
+norm      : if norm == 0 normalize each 2D spectrum individually, else normalize
+            all spectra to norm = <val>
 
 """
 function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", norm=0)
@@ -271,8 +273,14 @@ mutable struct out2d
     full2d_r
     full2d_nr
     gsb
+    gsb_r
+    gsb_nr
     se
+    se_r
+    se_nr
     esa
+    esa_r
+    esa_nr
 end
 
 
@@ -310,7 +318,7 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     println("############# calculate R and NR pathways #############");
     println("############# ########################### #############\n");
 
-    # TODO make subspace for GSB and SE pathways with only single excited manifold
+    # TODO make subspace for GSB and SE pathways with only single excited manifold -- DOne
 
     Eivecs = eigvecs(dense(H).data)
 
@@ -354,14 +362,6 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     P  = sparse(projector(b_sub, (H.basis_l)))
     Pt = dagger(P)
 
-    println("print P")
-    println(dense(P))
-    println(dense(Pt))
-    println(dense(H))
-    println(dense(P*μ12*Pt))
-
-    println(" ")
-
     if use_sub
         println("dim(subspace): ", length(b_sub))
         H_si    = P * H * Pt
@@ -379,13 +379,13 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
 
     # ground state bleach
     corr_func_NR_gsb = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"NR_gsb",method,false)
-    corr_func_R_gsb  = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"R_gsb", method,false)
+    corr_func_R_gsb  = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"R_gsb", method,true)
     #rhots_NR_gsb = rhots_NR_gsb - conj(rhots_NR_gsb)
     #rhots_R_gsb  = rhots_R_gsb  - conj(rhots_R_gsb)
 
     # stimulated emission
-    corr_func_NR_se = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"NR_se",method,true)
-    corr_func_R_se  = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"R_se", method,true)
+    corr_func_NR_se = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"NR_se",method,false)
+    corr_func_R_se  = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"R_se", method,false)
     #rhots_NR_se = rhots_NR_se - conj(rhots_NR_se)
     #rhots_R_se  = rhots_R_se  - conj(rhots_R_se)
 
@@ -452,11 +452,16 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     println("########## Construct absorptive 2D spectrum ###########");
     println("############# ########################### #############\n");
 
+    spec2d_R_gsb = circshift(reverse(spec2d_R_gsb ,dims=2),(0,1))
+    spec2d_R_se  = circshift(reverse(spec2d_R_se ,dims=2),(0,1))
+    spec2d_R_esa = circshift(reverse(spec2d_R_esa ,dims=2),(0,1))
+    spec2d_R_esax = circshift(reverse(spec2d_R_esax ,dims=2),(0,1))
+
     # calculate the absorptive spectrum of GSB, ESA, and SE
-    spec2d_gsb = spec2d_NR_gsb + circshift(reverse(spec2d_R_gsb,dims=2),(0,1))
-    spec2d_se  = spec2d_NR_se  + circshift(reverse(spec2d_R_se ,dims=2),(0,1))
-    spec2d_esa = spec2d_NR_esa + circshift(reverse(spec2d_R_esa,dims=2),(0,1))
-    spec2d_esax = spec2d_NR_esax + circshift(reverse(spec2d_R_esax,dims=2),(0,1))
+    spec2d_gsb = spec2d_NR_gsb + spec2d_R_gsb
+    spec2d_se  = spec2d_NR_se  + spec2d_R_se
+    spec2d_esa = spec2d_NR_esa + spec2d_R_esa
+    spec2d_esax = spec2d_NR_esax + spec2d_R_esax
 
     # sum rephasing and non-rephasing spectra individually
     spec2d_r = circshift(reverse(spec2d_R_gsb ,dims=2),(0,1)) +
@@ -480,8 +485,9 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     # cut spec2d
     tlist, ω = interpt(tlist,zp)
 
-    out = out2d(ω, spec2d, spec2d_r, spec2d_nr, spec2d_gsb,
-                                                spec2d_se, spec2d_esa)
+    out = out2d(ω, spec2d, spec2d_r, spec2d_nr, spec2d_gsb, spec2d_R_gsb,
+                spec2d_NR_gsb, spec2d_se, spec2d_R_se, spec2d_NR_se, spec2d_esa,
+                spec2d_R_esa, spec2d_NR_esa)
 
     if debug == true
         #=
@@ -542,8 +548,14 @@ function crop2d(data_struct,w_min;w_max=100,step=1)
     data_struct.full2d_r  = data_struct.full2d_r[min_i:step:max_i,min_i:step:max_i]
     data_struct.full2d_nr = data_struct.full2d_nr[min_i:step:max_i,min_i:step:max_i]
     data_struct.gsb       = data_struct.gsb[min_i:step:max_i,min_i:step:max_i]
+    data_struct.gsb_r     = data_struct.gsb_r[min_i:step:max_i,min_i:step:max_i]
+    data_struct.gsb_nr    = data_struct.gsb_nr[min_i:step:max_i,min_i:step:max_i]
     data_struct.se        = data_struct.se[min_i:step:max_i,min_i:step:max_i]
+    data_struct.se_r      = data_struct.se_r[min_i:step:max_i,min_i:step:max_i]
+    data_struct.se_nr     = data_struct.se_nr[min_i:step:max_i,min_i:step:max_i]
     data_struct.esa       = data_struct.esa[min_i:step:max_i,min_i:step:max_i]
+    data_struct.esa_r     = data_struct.esa_r[min_i:step:max_i,min_i:step:max_i]
+    data_struct.esa_nr    = data_struct.esa_nr[min_i:step:max_i,min_i:step:max_i]
 
     return data_struct
 
@@ -607,8 +619,8 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
 
     # SELECTING ONLY DIAGONAL ELEMENTS AT THIS POINT ELIMINATES PATHWAYS
     # THAT OSCILLATE DURING t2
-    XX = true   # get rid of off-diagonal elements during t2
-    YY = false  # get rid of on-diagonal elements during t2
+    XX = false   # get rid of off-diagonal elements during t2
+    YY = true  # get rid of on-diagonal elements during t2
 
     # initialize output matrix
     corr    = zeros(length(tlist),length(tlist))
@@ -670,6 +682,7 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
             rho2    =   rho1_τ[i]    * tri(μ_ge,"L")
             #rho2_cc =   μ_ge         * rho1_τ_cc[i]
     #         rho2_cc =   tri(μ_ge,"U")* rho1_τ_cc[i]
+            rho2a = rho2
             # eliminate on-diagonal or off-diagonal elements
             if XX
                 rho2.data = tril(triu(rho2.data))
@@ -679,6 +692,7 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
     #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
             else
             end
+            rho2b = rho2
             # time evolution during t2(T)-time
             if T[end] != 0
                 tout, rho2_T = t_ev(T,rho2,H,F)
@@ -904,6 +918,10 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
                     println("rho2_T[1] (before T evolution)")
                     println(rho2_T[1])
                 end
+                println("rho2a")
+                println(rho2a)
+                println("rho2b")
+                println(rho2b)
                 println("rho2")
                 println(rho2)
                 println(" ")
@@ -932,11 +950,11 @@ triangular (uplo="L") matrix.
 """
 function tri(dat,uplo)
     out = copy(dat)
-    if uplo == "L"
-        out.data = tril(out.data)
-    elseif uplo == "U"
-        out.data = triu(out.data)
-    end
+    #if uplo == "L"
+    #    out.data = tril(out.data)
+    #elseif uplo == "U"
+    #    out.data = triu(out.data)
+    #end
     return out;
 end
 
