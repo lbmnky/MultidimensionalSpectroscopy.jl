@@ -205,4 +205,14 @@ In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d
 
 ### Does it wiggle ?
 
-So far, coherence during the population time T were eliminated by setting off-diagonal elements of the density matrix to zero, directly after the second interaction with μ. TBC ...
+
+#### Displaced oscillator model
+
+The following calculations were done using the [displaced oscillator](examples\displaced_harmonic_oscillator_model.jl) model. During the population time T, the diagonal elements of the density matrix are set to zero (search for keyword "XX" in ``cmds.correlations()``; will be implemented better in a future version). The following figures show the absolute value 2D spectra, which a in a vibrational coherence during T:
+
+<p float="center">
+<img src="example_images\DO_GSB_R_osc.png" width=45%/>
+<img src="example_images\DO_GSB_NR_osc.png"  width=45%/>
+<img src="example_images\DO_SE_R_osc.png" width=45%/>
+<img src="example_images\DO_SE_NR_osc.png" width=45%/>
+</p>
