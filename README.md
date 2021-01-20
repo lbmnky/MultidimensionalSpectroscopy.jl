@@ -86,7 +86,7 @@ The following [example scripts](/examples) are available.
  - [evolution of the density matrix visualized](#evolutionDensityMatrix)
 - [Tavis-Cummings model](#tavisCummings)
 - [lookings at GSB, SE and ESA seperately](#GSB-SE-ESA)
-- R and NR
+- [R and NR](#R-NR)
 - [Convolution with a laser pulse](#laserConvolution)
 - [vibrational coherence during T](#vibrationalCoherences)
 
@@ -152,7 +152,7 @@ TODO 2D with Morse potential
 
 The coupling between a quantized optical field and a two-level system is described by the Jaynes-Cummings Hamiltonian
 
-H = ω<sub>r</sub> a<sup>†</sup> a + ω<sub>a</sub> σ<sub>+</sub> σ<sub>-</sub> + ( a<sup>†</sup> σ<sub>-</sub> + a σ<sub>+</sub> )
+H = ω<sub>r</subR-NR> a<sup>†</sup> a + ω<sub>a</sub> σ<sub>+</sub> σ<sub>-</sub> + ( a<sup>†</sup> σ<sub>-</sub> + a σ<sub>+</sub> )
 
 or for you to copy:
 
@@ -223,6 +223,10 @@ CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.s
 <!--![SE](/example_images/coupledDimer_SE.png)-->
 
 <!--![ESA](/example_images/coupledDimer_ESA.png)-->
+
+<a name="R-NR"></a>
+### Disentangling rephasing and non-rephasing signals
+[back to TOC](#examplesTOC)
 
 In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d_nr) parts of the signal are available:
 
