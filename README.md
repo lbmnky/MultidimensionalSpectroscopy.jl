@@ -76,6 +76,19 @@ Make sure to disable all output plots within ``cmds.make2Dspectra()`` when using
 The following [example scripts](/examples) are available.
 
 - [coupled Dimer](#coupledDimer)
+- [coupled Dimer with detuning](#coupledDimerDetuned)
+- [displaced Oscillator](#DO)
+- [How to calculated Franck-Condon factors for a Morse potential](#FCFmorse)
+- [Jaynes-Cummings model](#jaynesCummings)
+- [disordered ensemble of two-level systems with relaxation](#ensembleDisorder)
+ - [evolution of the density matrix visualized](#evolutionDensityMatrix)
+- [Tavis-Cummings model](#tavisCummings)
+- [lookings at GSB, SE and ESA seperately](#GSB-SE-ESA)
+- R and NR
+- [Convolution with a laser pulse](#laserConvolution)
+- [vibrational coherence during T](#vibrationalCoherences)
+
+
 <a name="coupledDimer"></a>
 ### coupled_dimer.jl
 
@@ -90,6 +103,7 @@ CMDS.jl uses QuantumOptics.jl to calculate the 3rd-order response functions in a
 The 2D spectrum shows the ground state bleach and stimulated emission (green/yellow/red) of the ... transition on the diagonal and the excited state absorption (blue/purple) of the ... transition as the off-diagonal peak.
 
 
+<a name="coupledDimerDetuned"></a>
 ### coupledDimer.jl with slightly detuned monomers and reduced coupling
 
 ...
@@ -98,6 +112,7 @@ Evolution during the population time leads to a decrease in signal intensity:
 
 ![coupledDimer evolution](example_images/coupledDimer2D_evolution.png)
 
+<a name="DO"></a>
 ### displaced_harmonic_oscillator_model.jl
 
 Another [textbook example](chem.libretexts.org/Bookshelves/Physical_and_Theoretical_Chemistry_Textbook_Maps/Book%3A_Time_Dependent_Quantum_Mechanics_and_Spectroscopy_(Tokmakoff)/13%3A_Coupling_of_Electronic_and_Nuclear_Motion/13.01%3A_The_Displaced_Harmonic_Oscillator_Model) is the displaced oscillator (DO) model. [Here](examples/displaced_harmonic_oscillator_model.jl), two electronic levels with vibrational sub-levels are coupled and yield the correlation function and spectrum:
@@ -114,6 +129,7 @@ Again, using ``CMDS.jl`` we can calculate the expected 2D spectrum at ``T=0`` ..
 
 Of course, the latter is still greatly simplified.
 
+<a name="FCFmorse"></a>
 ### FCF_morse-potential.jl
 
 As an intermezzo, QuantumOptics.jl can also be used to calculate Franck-Condon factors of a transition between Morse potentials:
@@ -124,6 +140,7 @@ As an intermezzo, QuantumOptics.jl can also be used to calculate Franck-Condon f
 
 TODO 2D with Morse potential
 
+<a name="jaynesCummings"></a>
 ### Jaynes-Cummings model
 
 The coupling between a quantized optical field and a two-level system is described by the Jaynes-Cummings Hamiltonian
@@ -144,7 +161,7 @@ Here, ω<sub>r</sub> is the energy/frequency/... of the cavity mode, a<sup>†</
 
 ![Jaynes-Cummings 2D spectrum](/example_images/JaynesCummingsSpectrum2D.png)
 
-
+<a name="ensembleDisorder"></a>
 ### Ensemble of two-level systems with disorder
 
 In order to study the effect of disorder on the 2D signal [examples\ensemble_of_TLSs_w_disorder.jl](examples\ensemble_of_TLSs_w_disorder.jl) creates a composite Hamiltonian of ``num_of_TLSs`` two-level systems, whose energies are distributed by the function used to create ``disorder``. For a Gaussian distribution of energies and 5 ``num_of_TLSs = 5`` the energy diagram looks as follows:
@@ -167,16 +184,19 @@ The resulting 2D spectrum is characterized by an elongated diagonal peak, and re
 
 ![ensemble 2D](example_images/ensemble_2D.png)
 
+<a name="evolutionDensityMatrix"></a>
 #### Evolution of density matrix
 
 Using ``cmds.view_dm_evo()`` you can visualize the temporal (T) evolution of the system density matrix.
 
 ![dm evo](/example_images/ensemble_dmEvo.png)
 
+<a name="tavisCummings"></a>
 ### Tavis-Cummings
 
 In order to go beyond the Jaynes-Cummings model ...
 
+<a name="GSB-SE-ESA"></a>
 ### Disentangling GSB, SE and ESA contributions
 
 CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.se) and ESA (out2d.esa) components:
@@ -200,11 +220,11 @@ In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d
 <img src="/example_images/coupledDimer_nr.png" width="350"/>
 </p>
 
-
+<a name="laserConvolution"></a>
 ### Convolution with laser spectrum
 
 
-
+<a name="vibrationalCoherences"></a>
 ### Does it wiggle ?
 
 
