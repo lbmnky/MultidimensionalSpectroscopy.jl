@@ -73,8 +73,10 @@ end
 Make sure to disable all output plots within ``cmds.make2Dspectra()`` when using __multithreading__, as these might crash the execution.
 ## Examples
 
-The following [/examples](/examples) are available.
+The following [example scripts](/examples) are available.
 
+- [coupled Dimer](#coupledDimer)
+<a name="coupledDimer"></a>
 ### coupled_dimer.jl
 
 The properties (angles, coupling strength, etc.) of a coupled dimer system are calculated (see [/examples/coupled_dimer.jl](/examples/coupled_dimer.jl) for details) and QuantumOptics.jl is used to calculate the correlation function and linear absorption spectrum. The output provides the dimer geometry, distribution of the transition dipole moment strength, the system energy level scheme, the correlation function and spectrum.
