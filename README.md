@@ -80,6 +80,7 @@ The following [example scripts](/examples) are available.
 - [coupled Dimer](#coupledDimer)
 - [coupled Dimer with detuning](#coupledDimerDetuned)
 - [displaced Oscillator](#DO)
+  - [vibrational coherence during T](#vibrationalCoherences)
 - [How to calculated Franck-Condon factors for a Morse potential](#FCFmorse)
 - [Jaynes-Cummings model](#jaynesCummings)
 - [disordered ensemble of two-level systems with relaxation](#ensembleDisorder)
@@ -88,7 +89,6 @@ The following [example scripts](/examples) are available.
 - [lookings at GSB, SE and ESA seperately](#GSB-SE-ESA)
 - [R and NR](#R-NR)
 - [Convolution with a laser pulse](#laserConvolution)
-- [vibrational coherence during T](#vibrationalCoherences)
 
 
 <a name="coupledDimer"></a>
@@ -133,6 +133,21 @@ Again, using ``CMDS.jl`` we can calculate the expected 2D spectrum at ``T=0`` ..
 ![Evolution of displacedHarmonicOscillator 2D spectrum](/example_images/displHarmOsc2D_new.png)
 
 Of course, the latter is still greatly simplified.
+
+
+<a name="vibrationalCoherences"></a>
+#### Does it wiggle too?
+[back to TOC](#examplesTOC)
+
+The following calculations were done using the [displaced oscillator](examples\displaced_harmonic_oscillator_model.jl) model. During the population time T, the diagonal elements of the density matrix are set to zero (search for keyword "XX" in ``cmds.correlations()``; will be implemented better in a future version). The following figures show the absolute value 2D spectra, which a in a vibrational coherence during T:
+
+<p float="center">
+<img src="example_images\DO_GSB_R_osc.png" width=45%/>
+<img src="example_images\DO_GSB_NR_osc.png"  width=45%/>
+<img src="example_images\DO_SE_R_osc.png" width=45%/>
+<img src="example_images\DO_SE_NR_osc.png" width=45%/>
+</p>
+
 
 <a name="FCFmorse"></a>
 ### FCF_morse-potential.jl
@@ -238,20 +253,3 @@ In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d
 <a name="laserConvolution"></a>
 ### Convolution with laser spectrum
 [back to TOC](#examplesTOC)
-
-
-<a name="vibrationalCoherences"></a>
-### Does it wiggle ?
-[back to TOC](#examplesTOC)
-
-
-#### Displaced oscillator model
-
-The following calculations were done using the [displaced oscillator](examples\displaced_harmonic_oscillator_model.jl) model. During the population time T, the diagonal elements of the density matrix are set to zero (search for keyword "XX" in ``cmds.correlations()``; will be implemented better in a future version). The following figures show the absolute value 2D spectra, which a in a vibrational coherence during T:
-
-<p float="center">
-<img src="example_images\DO_GSB_R_osc.png" width=45%/>
-<img src="example_images\DO_GSB_NR_osc.png"  width=45%/>
-<img src="example_images\DO_SE_R_osc.png" width=45%/>
-<img src="example_images\DO_SE_NR_osc.png" width=45%/>
-</p>
