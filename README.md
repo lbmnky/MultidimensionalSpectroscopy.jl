@@ -89,6 +89,7 @@ The following [example scripts](/examples) are available.
 - [lookings at GSB, SE and ESA seperately](#GSB-SE-ESA)
 - [R and NR](#R-NR)
 - [Convolution with a laser pulse](#laserConvolution)
+- [Coupling a coupled dimer to a cavity](#coupledDimerCavity)
 
 
 <a name="coupledDimer"></a>
@@ -252,4 +253,8 @@ In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d
 
 <a name="laserConvolution"></a>
 ### Convolution with laser spectrum
+[back to TOC](#examplesTOC)
+
+<a name="coupledDimerCavity"></a>
+### Coupled dimer inside a cavity
 [back to TOC](#examplesTOC)
