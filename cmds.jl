@@ -312,7 +312,7 @@ functions by evaluating the Lindblad master equation.
             to also scale tlist and ω via function "interpt.jl". Default zp=0,
             data is not zeropadded.
 """
-function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, use_sub=true, zp=0)
+function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, use_sub=true, zp=0, t2coh=false)
 
     println("############# ########################### #############");
     println("############# calculate R and NR pathways #############");
@@ -346,14 +346,14 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     end
 
     # excited state absorption
-    corr_func_NR_esa = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"NR_esa",method,false)
-    corr_func_R_esa  = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"R_esa", method,false)
+    corr_func_NR_esa = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"NR_esa",method,false; t2coh=t2coh)
+    corr_func_R_esa  = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"R_esa", method,false; t2coh=t2coh)
     #rhots_NR_esa = rhots_NR_esa - conj(rhots_NR_esa)
     #rhots_R_esa  = rhots_R_esa  - conj(rhots_R_esa)
 
     # excited state absorption ... from GS
-    corr_func_NR_esax = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"NR_esax",method,false)
-    corr_func_R_esax  = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"R_esax", method,false)
+    corr_func_NR_esax = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"NR_esax",method,false; t2coh=t2coh)
+    corr_func_R_esax  = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"R_esax", method,false; t2coh=t2coh)
 
     n_sub       = 1 + L
     Eivecs_sub  = [Ket(H.basis_l,Eivecs[:,i]) for i in 1:n_sub]
@@ -378,14 +378,14 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     end
 
     # ground state bleach
-    corr_func_NR_gsb = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"NR_gsb",method,false)
-    corr_func_R_gsb  = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"R_gsb", method,true)
+    corr_func_NR_gsb = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"NR_gsb",method,false; t2coh=t2coh)
+    corr_func_R_gsb  = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"R_gsb", method,true; t2coh=t2coh)
     #rhots_NR_gsb = rhots_NR_gsb - conj(rhots_NR_gsb)
     #rhots_R_gsb  = rhots_R_gsb  - conj(rhots_R_gsb)
 
     # stimulated emission
-    corr_func_NR_se = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"NR_se",method,false)
-    corr_func_R_se  = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"R_se", method,false)
+    corr_func_NR_se = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"NR_se",method,false; t2coh=t2coh)
+    corr_func_R_se  = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"R_se", method,false; t2coh=t2coh)
     #rhots_NR_se = rhots_NR_se - conj(rhots_NR_se)
     #rhots_R_se  = rhots_R_se  - conj(rhots_R_se)
 
@@ -595,7 +595,7 @@ Calculate the response functions necessary for 2D spectroscopy.
 * F         : is either list of collapse operators (c_ops; Lindblad) or
             of relaxation tensor (R, Redfield)
 """
-function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
+function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2coh=false)
 
     ## use full transition dipole operator matrix
     μ = μa + μb
@@ -617,15 +617,9 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
     print(string(pathway, " at T = $T fs ..."))
     T = [0.:1.:T;]     # cAN I START FROM -1.0 to include T = 0 ?
 
-    # SELECTING ONLY DIAGONAL ELEMENTS AT THIS POINT ELIMINATES PATHWAYS
-    # THAT OSCILLATE DURING t2
-    XX = false   # get rid of off-diagonal elements during t2
-    YY = true  # get rid of on-diagonal elements during t2
-
     # initialize output matrix
     corr    = zeros(length(tlist),length(tlist))
     corr_cc = zeros(length(tlist),length(tlist))
-
 
     # use right-hand excitation for rephasing and left-hand excitation for
     # non-rephasing to ensure that emission is from the left of the double-
@@ -684,13 +678,12 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
     #         rho2_cc =   tri(μ_ge,"U")* rho1_τ_cc[i]
             rho2a = rho2
             # eliminate on-diagonal or off-diagonal elements
-            if XX
+            if t2coh == false
                 rho2.data = tril(triu(rho2.data))
     #            rho2_cc.data = tril(triu(rho2_cc.data))
-            elseif YY
+            else
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
     #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
-            else
             end
             rho2b = rho2
             # time evolution during t2(T)-time
@@ -716,13 +709,12 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
             #rho2_cc = rho1_τ_cc[i] * μ_ge
     #        rho2_cc = rho1_τ_cc[i] * tri(μ_ge,"L")
 
-            if XX
+            if t2coh == false
                 rho2.data = tril(triu(rho2.data))
     #            rho2_cc.data = tril(triu(rho2_cc.data))
-            elseif YY
+            else
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
     #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
-            else
             end
 
             if T[end] != 0
@@ -747,13 +739,12 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
             #rho2_cc = rho1_τ_cc[i] * μ_ge
     #        rho2_cc = rho1_τ_cc[i] * tri(μ_ge,"U")
 
-            if XX
+            if t2coh == false
                 rho2.data = tril(triu(rho2.data))
     #            rho2_cc.data = tril(triu(rho2_cc.data))
-            elseif YY
+            else
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
     #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
-            else
             end
 
             if T[end] != 0
@@ -780,13 +771,12 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
             #rho2_cc = μ_ge * rho1_τ_cc[i]
     #        rho2_cc = tri(μ_ge,"L") * rho1_τ_cc[i]
 
-            if XX
+            if t2coh == false
                 rho2.data = tril(triu(rho2.data))
     #            rho2_cc.data = tril(triu(rho2_cc.data))
-            elseif YY
+            else
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
     #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
-            else
             end
 
             if T[end] != 0
@@ -814,13 +804,12 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
             #rho2_cc = rho1_τ_cc[i]  * μ_ge
     #        rho2_cc = rho1_τ_cc[i]  * tri(μ_ge,"U")
 
-            if XX
+            if t2coh == false
                 rho2.data = tril(triu(rho2.data))
     #            rho2_cc.data = tril(triu(rho2_cc.data))
-            elseif YY
+            else
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
     #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
-            else
             end
 
             if T[end] != 0
@@ -849,13 +838,12 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug)
     #        rho2_cc = tri(μ_ge,"L") * rho1_τ_cc[i]
             #rho2_cc = rho1_τ_cc[i] * μ_ge
 
-            if XX
+            if t2coh == false
                 rho2.data = tril(triu(rho2.data))
     #            rho2_cc.data = tril(triu(rho2_cc.data))
-            elseif YY
+            else
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
     #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
-            else
             end
 
             if T[end] != 0
