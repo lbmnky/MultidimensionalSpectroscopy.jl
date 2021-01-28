@@ -20,13 +20,13 @@ end
 
 cmp = cmds.create_colormap("bright");
 
-calc_2d = false
+calc_2d = true
 
-D_HR = .6
+D_HR = .65
 d = sqrt(D_HR)
 
 b_tls = NLevelBasis(2)  # Hilbert-space of system                   Basis: {|ui⟩}
-b_vib = FockBasis(3)    # Hilbert-space of oscillator               Basis: {|vi⟩}
+b_vib = FockBasis(1)    # Hilbert-space of oscillator               Basis: {|vi⟩}
 b = b_tls ⊗ b_vib       # combined basis
 
 #=
@@ -50,10 +50,10 @@ D = displace(b_vib,d)
 
 # ground states
 Eg = 0
-ωg = .2
+ωg = .6
 Hg_el = Eg * j12 * j21     # == HG = g * Eg ⊗ dagger(g)
-Hg_vib = ωg * (at*a + one(b_vib) * 1/2)
-Hg = Hg_el ⊗ one(b_vib) + one(b_tls) ⊗ Hg_vib
+Hg_vib = ωg * (at*a + a*at * 1/2)
+Hg = Hg_el ⊗ one(b_vib) + j12*j21 ⊗ Hg_vib
 #Hg = Hg_el ⊗ Hg_vib
 
 # HAVE TO created excited states w/o displaced potential and the use displacement
@@ -61,13 +61,14 @@ Hg = Hg_el ⊗ one(b_vib) + one(b_tls) ⊗ Hg_vib
 # this as transition dipole operator ...
 
 # excited state
-Ee = 4
+Ee = 2.05
 He_el = Ee * j21 * j12
 He_vib = dagger(D) * Hg_vib * D # issue with D and dagger(D)
 #He_vib = D * Hg_vib * dagger(D) # issue with D and dagger(D)
-He_vib = Hg_vib
-He = He_el ⊗ one(b_vib) + one(b_tls) ⊗ He_vib
+He_vib = Hg_vib  # TODO figure out what's going on here
+He = He_el ⊗ one(b_vib) + j21*j12 ⊗ He_vib
 #He = He_el ⊗ He_vib
+
 H = Hg + He
 println("Display Hamiltonian")
 #display(dense(H).data[1:10,1:4])
@@ -135,7 +136,8 @@ D.data = FC
 μ = transition(b_tls,1,2) + transition(b_tls,2,1)
 μ = μ ⊗ D
 μ12 = μ
-μ23 = μ
+μ23 = copy(μ)
+fill!(μ23.data,0)
 
 # initialize in groud state
 Psi0 = nlevelstate(b_tls,1) ⊗ fockstate(b_vib,0)
@@ -151,7 +153,7 @@ c_ops = [Γ[1] * one(b_tls) ⊗ (a), Γ[2] * (j12) ⊗ one(b_vib)]
 
 tlist = [0:0.05:15;]*2*π
 
-corr = timecorrelations.correlation(tlist, rho0, H, c_ops, μ12, μ23)
+corr = timecorrelations.correlation(tlist, rho0, H, c_ops, μ12, μ12)
 
 #tout, rhot = timeevolution.master(tlist,μ12*rho0,H,c_ops)
 #corr = expect(μ23,rhot)
@@ -190,7 +192,7 @@ if calc_2d
     zp = 10
 
     ## calculate 2d spectra at
-    T = [0., 5., 10., 15.]
+    T = [0.]
     #out2d = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T,"lindblad";debug=false,zp=zp);
     out2d = Array{cmds.out2d}(undef, length(T))
 
@@ -200,21 +202,21 @@ if calc_2d
     #for i = 1:length(T)
         out2d[i] = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
                                             "lindblad";debug=true,use_sub=false,
-                                                zp=zp);
+                                                zp=zp, t2coh=false);
     end
 
     ## crop 2D data and increase dw
-    out2d = [cmds.crop2d(out2d[i],3.5;w_max=5.5,step=2) for i = 1:length(T)]
+    out2d = [cmds.crop2d(out2d[i],1.5;w_max=4,step=1) for i = 1:length(T)]
 
     ## plot 2D spectra for each(?) T
     # what to plot
-    rep="absorptive"
-    scal="lin"
+    rep  = "absorptive"
+    scal = "lin"
 
     ## make  subplot layout
     nplots = length(T);
-    ncols = Int32(ceil(sqrt(nplots)));
-    nrows = Int32(ceil(nplots / ncols));
+    ncols  = Int32(ceil(sqrt(nplots)));
+    nrows  = Int32(ceil(nplots / ncols));
 
     # determine maximum value in dataset out2d[:].full2d[:,:]
     maxi = maximum([maximum(real(out2d[i].full2d)) for i in 1:length(out2d)])
@@ -236,6 +238,7 @@ if calc_2d
             sca(ax[i,j])
             ax[i,j].set_aspect="equal"
             cmds.plot2d(out2d[k].ω,round.(out2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
+            #cmds.plot2d(out2d[k].ω,abs.(out2d[k].full2d_nr);repr=rep,scaling=scal,norm=0)
             title("2D spectrum at $(T[k]) fs")
             colorbar()
         end
@@ -247,9 +250,9 @@ if calc_2d
 
     plot([Ee-Eg, Ee-Eg] .+ 0*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
     plot([Ee-Eg, Ee-Eg] .+ 2*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
-    plot([Ee-Eg, Ee-Eg] .+ 4*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
+    #plot([Ee-Eg, Ee-Eg] .+ 4*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
     plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 0*ωg,"k--",linewidth=0.5)
     plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 2*ωg,"k--",linewidth=0.5)
-    plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 4*ωg,"k--",linewidth=0.5)
+    #plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 4*ωg,"k--",linewidth=0.5)
 
 end
