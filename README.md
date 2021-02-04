@@ -268,7 +268,7 @@ In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d
 [back to TOC](#examplesTOC)
 
 <p float="left">
-<img src="example_images/dimer_in_cavity.png"  width=49%/>
+<img src="example_images/dimer_in_cavity.png"  width=100%/>
 </p>
 
 
