@@ -41,7 +41,7 @@ end
 # position of dipole 1 and angle wrt to x-axis (random)
 x₁, y₁, α₁, d₁ = 0, 0, angle2rad(0), 0.25
 # r: distance, β: slip angle
-r , β          = 1.20, angle2rad(0)
+r , β          = 1.155, angle2rad(23.147495) # slip angle for TDBC 0.404 rad https://arxiv.org/pdf/1202.5712.pdf (theory)
 # position of dipole 2 (calculated)
 x₂, y₂         = x₁ + r*cos(β), y₁ + r*sin(β)
 # angle and moment of dipole 2
@@ -50,13 +50,13 @@ x₂, y₂         = x₁ + r*cos(β), y₁ + r*sin(β)
 ## set up energies and couplings
 # homo dimer    : E1 == E2 and J1 = J2
 # hetero dimer  : E1 != E2
-E₁ = 3.0
-E₂ = 3.0
+E₁ = 2.396
+E₂ = 2.396
 
 ## draw dimer
 #
-figure(figsize=(10,4));
-ax1 = subplot(231);
+figure(figsize=(10,6));
+ax1 = subplot(331);
 grid(b=1,which="both")
 plot([x₁,x₂], [y₁,y₂], linestyle="--", color="k")
 draw_dipole(x₁,y₁,α₁,d₁); draw_dipole(x₂,y₂,α₂,d₂)
@@ -121,13 +121,13 @@ H_dim = one(b_mon) ⊗ H₁ + H₂ ⊗ one(b_mon) + Hₓ
 
 ## ADD CAVITY
 
-wcav = 2.95 # cavity frequency
-g  = 0.2   # coupling strength
+wcav = 2.2 # cavity frequency
+g  = 0.15   # coupling strength
 κ = 0.5         # cavity dissipation rate
-N = 1               # number of cavity fock states
+N = 2               # number of cavity fock states
 b_fock = FockBasis(N)
 a = destroy(b_fock) ⊗ one(b_dim)
-at = dagger(a)
+at = sparse(dagger(a))
 
 J12a = j12 ⊗ one(j12)
 J12b = one(j12) ⊗ j12
@@ -135,7 +135,7 @@ J21a = j21 ⊗ one(j21)
 J21b = one(j21) ⊗ j21
 
 sm = one(b_fock) ⊗ (j12 ⊗ j21)
-sp = dagger(sm)
+sp = sparse(dagger(sm))
 
 A = at * (one(b_fock) ⊗ J12a) + at * (one(b_fock) ⊗ J12b)
 B = a  * (one(b_fock) ⊗ J21a) + a  * (one(b_fock) ⊗ J21b)
@@ -184,24 +184,29 @@ display(rho0)
 tlist = [0:0.2:150;]
 
 ## make collapse operator
-ccc = diagonaloperator(b_mon,[1, 1/4])
+ccc = diagonaloperator(b_mon,[1, 1])
+#ccc = one(b_mon)
 #c_ops = [sqrt(0.25)*one(b_mon)⊗j12, sqrt(0.25)*j12⊗one(b_mon)]
-L = [sqrt(0.1)*one(b_fock)⊗ccc⊗j12, sqrt(0.1)*one(b_fock)⊗j12⊗ccc,sqrt(0.35) * a]
-display(dense(L[1])); display(dense(L[2])); display(dense(L[3]))
+L = [one(b_fock)⊗ccc⊗j12, one(b_fock)⊗j12⊗ccc, a]
 
-## make transition dipole operator
+Γ_L = [sqrt(0.005), sqrt(0.005),               sqrt(0.02)]
+Γ_a = [sqrt(0.2), sqrt(0.2), sqrt(0.2), sqrt(0.2)]
+
+L = Γ_L .* L
+## make transition dipole operator FOR DIMER SYSTEM !!!!!
 # clearly now μ has a direction dependence, but if sample is isotropic  take:
 μ   = (μx + μy)
 # and the tdm with the ground state:
-μ12 = μ .* (j12*j21⊗j21 + j12*j21⊗j12 + j21⊗(j12*j21) + j12⊗(j12*j21))
-display(dense(μ12))
+#μ12 = one(b_fock) ⊗ (μ .* (j12*j21⊗j21 + j12*j21⊗j12 + j21⊗(j12*j21) + j12⊗(j12*j21)))
+#display(dense(μ12))
 # ... and with the doubly excited state:
-μ23 = μ .* (j21*j12⊗j21 + j21*j12⊗j12 + j21⊗(j21*j12) + j12⊗(j21*j12))
-display(dense(μ23))
-
-μ12 = at * (one(b_fock) ⊗ (J12a * J21a)) + a * (one(b_fock) ⊗ (J12a * J21a))
-μ23 = at * (one(b_fock) ⊗ (J21a * J12a)) + a * (one(b_fock) ⊗ (J21a * J12a)) +
-      at * (one(b_fock) ⊗ (J21b * J12b)) + a * (one(b_fock) ⊗ (J21b * J12b))
+#μ23 = one(b_fock) ⊗ (μ .* (j21*j12⊗j21 + j21*j12⊗j12 + j21⊗(j21*j12) + j12⊗(j21*j12)))
+#display(dense(μ23)) 
+CC = ccc ⊗ ccc
+## make transition dipole operator FOR CAVITY !!!!!
+μ12 = at * (one(b_fock) ⊗ (J12a * J21a * CC)) + a * (one(b_fock) ⊗ (J12a * J21a * CC))
+μ23 = at * (one(b_fock) ⊗ (J21a * J12a * CC)) + a * (one(b_fock) ⊗ (J21a * J12a * CC)) +
+      at * (one(b_fock) ⊗ (J21b * J12b * CC)) + a * (one(b_fock) ⊗ (J21b * J12b* CC))
 μ = μ12 + μ23
 
 rho1 = μ12 * rho0 * μ12
@@ -217,21 +222,21 @@ rho2 = μ23 * rho1 * μ23
 # fundamental possible ?
 if J < 0
         # tdm magnitude <0,0|μ|0,1>
-        a = states[1,:]' * dense(μ).data * states[2,:]
+        Ja = states[1,:]' * dense(μ).data * states[2,:]
         # tdm magnitude <0,0|μ|1,0>
-        b = states[1,:]' * dense(μ).data * states[3,:]
+        Jb = states[1,:]' * dense(μ).data * states[3,:]
 elseif J > 0
         # everything reversed
-        a = states[1,:]' * dense(μ).data * states[3,:]
-        b = states[1,:]' * dense(μ).data * states[2,:]
+        Ja = states[1,:]' * dense(μ).data * states[3,:]
+        Jb = states[1,:]' * dense(μ).data * states[2,:]
 end
 
 # plot
-ax3 = subplot(234)
-bar(0, real(a))
-bar(1, real(b))
+ax3 = subplot(334)
+bar(0, real(Ja))
+bar(1, real(Jb))
 xticks([0, 1], ["μ_g-e1", "μ_g-e2"])
-xlim([-1, 2]); ylim([0, 1.5 * maximum(real([a, b]))])
+xlim([-1, 2]); ylim([0, 1.5 * maximum(real([Ja, Jb]))])
 ylabel("tdm strength")
 
 ## calculate and plot expectation values of population
@@ -258,24 +263,21 @@ tnew, ~ = cmds.interpt(tlist,zp)
 ω,spec = timecorrelations.correlation2spectrum(tnew, corr; normalize_spec=true)
 
 ## add the results to previous figure
-ax4 = subplot(233)
-plot(tnew,real(corr),"k")
-title("Dimer correlation function")
+ax4 = subplot(336)
+plot(tnew,real(corr),"gray")
+title("System correlation function")
 xlabel("time"); ylabel("Corr. func. ⟨ ... | ... ⟩")
 
-ax5 = subplot(236)
+ax5 = subplot(339)
 plot(-[E₁, E₁], [0, .5])
 plot(-[E₂, E₂], [0, .5])
-plot(ω,spec,"k")
+plot(ω,spec,"gray")
 plot(-[energies[2], energies[2]], [0, .5],"k--")
 plot(-[energies[3], energies[3]], [0, .5],"k--")
-title("Dimer abs. spectrum")
+title("System abs. spectrum")
 xlabel("ω"); ylabel("Absorption")
 
-tight_layout()
 
-
-"""
 ωC = 1
 S = 0.1
 # check out: physics.stackexchange.com/questions/474313/ohmic-spectral-density
@@ -308,11 +310,14 @@ end
 
 ### HOW TO GET RIGHT OPERATORS ??????????
 ### ????????????????????????????????????
-a_ops = [sqrt(0.1)*((j12*j21)⊗one(b_mon)+one(b_mon)⊗(j12*j21)),spectral_density]
-a_ops = [sqrt(.51)*one(b_mon)⊗(j12*j21), noise_power]
-j_ops = [sqrt(0.01)*j12⊗one(b_mon),sqrt(0.01)*one(b_mon)⊗j12]
+a_ops = [Γ_a[1] * one(b_fock) ⊗ one(b_mon) ⊗ (j12*j21) , noise_power,
+         Γ_a[2] * one(b_fock) ⊗ (j12*j21) ⊗ one(b_mon) , noise_power,
+         Γ_a[3] * one(b_fock) ⊗ (j21*j12) ⊗ (j21*j12)  , noise_power,
+         Γ_a[4] * (at*a)                                 , noise_power]
 
-R, ekets = timeevolution.bloch_redfield_tensor(H, [a_ops], J=j_ops)
+#a_ops = [*(Γ_a[i], a_ops[2*i-1]) for i in 1:length(Γ_a)]
+
+R, ekets = timeevolution.bloch_redfield_tensor(H, [a_ops], J=L)
 # different elements in R ... https://www.pnas.org/content/pnas/108/52/20908.full.pdf
 # changing R[1,1] let's 2D signal disappear after a certain time T
 #R.data[1,1] = -0.01
@@ -326,20 +331,26 @@ zp = 11
 corr = cmds.zeropad(corr,zp)
 tnew, ~ = cmds.interpt(tout,zp)
 
-#subplot(233)
+#subplot(336)
 ax4.plot(tnew,real(corr),"g",linewidth=1,label="RF")
 
 ω,spec = timecorrelations.correlation2spectrum(tnew, corr; normalize_spec=true)
+ax5.plot(ω,spec)
 
 #subplot(236)
 #ax5.plot(ω,spec,"g",linewidth=1,label="RF")
 
 tout, rhot = timeevolution.master_bloch_redfield(tlist,μ12*rho0*μ12,R,H)
-es1 = expect((j21*j12)⊗one(b_mon),rhot)
-es2 = expect(one(b_mon)⊗(j21*j12),rhot)
 
-ax4.plot(tout,real(es1),tout,real(es2))
-"""
+es1 = expect(one(b_fock) ⊗ (j21*j12)  ⊗ one(b_mon), rhot)
+es2 = expect(one(b_fock) ⊗ one(b_mon) ⊗ (j21*j12),  rhot)
+cav = expect(create(b_fock) * destroy(b_fock) ⊗ one(b_mon) ⊗ one(b_mon), rhot)
+gs  = expect(rho0, rhot)
+
+subplot(333)
+plot(tout,real(es1),tout,real(es2),tout,cav,tout,gs)
+legend(["ES1", "ES2", "cav", "GS"],loc="right")
+tight_layout() 
 
 """
 figure(figsize=(6,4))
@@ -347,8 +358,14 @@ ww = [0:.1:100;]
 plot(ww,debye(ww));
 """
 
-F = L
-#F = R
+method = "redfield"
+if method == "redfield"
+    F       = R
+    use_sub = false
+elseif method == "lindblad"
+    F       = L
+    use_sub = true
+end
 
 if calc_2d
 
@@ -356,17 +373,17 @@ if calc_2d
         zp = 11 # zeropad up to 2^zp
 
         ## calculate 2D spectra at
-        T = [0,5] #fs
+        T = [0,20] #fs
 
         out2d = Array{cmds.out2d}(undef, length(T))
 
         Threads.@threads for i = 1:length(T)
             out2d[i] = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
-                                                "lindblad";debug=true,zp=zp);
+                                                method;debug=true,use_sub=use_sub,zp=zp);
         end
 
         ## crop 2D data and increase dw
-        out2d = [cmds.crop2d(out2d[i],2;w_max=4,step=2) for i = 1:length(T)]
+        out2d = [cmds.crop2d(out2d[i],1.3;w_max=3.5,step=1) for i = 1:length(T)]
 
         ## plot 2D spectra for each(?) T
         # what to plot
@@ -382,7 +399,7 @@ if calc_2d
         maxi = maximum([maximum(real(out2d[i].full2d)) for i in 1:length(out2d)])
 
         # plot 2D spectra
-        fig, ax = subplots(nrows,ncols,sharex=true,sharey=true,figsize=(ncols*3.2,nrows*3))
+        fig, ax = subplots(nrows,ncols,sharex=true,sharey=true,figsize=(ncols*3.2,nrows*3),squeeze=false)
         fig.suptitle(rep * " 2D spectrum (" * scal * ". scaling)")
         k = 0
         for i = 1:ncols
@@ -394,12 +411,12 @@ if calc_2d
                 sca(ax[k])
                 ax[k].set_aspect = "equal"
                 cmds.plot2d(out2d[k].ω,round.(out2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
-                title("2D spectrum at $(T[k]) fs")
-                colorbar()
+                ax[k].set_title("2D spectrum at $(T[k]) fs")
             end
         end
-        subplots_adjust(top=0.8)
         tight_layout()
+        subplots_adjust(top=0.88)
+        
 
         ω = out2d[1].ω
         ## plot additional things, like energy levels of states
@@ -415,7 +432,7 @@ if calc_2d
 
         ## plot TA (summed 2D spectrum)
         figure()
-        ta = [sum(out2d[i].full2d,dims=1) for i in 1:length(out2d)] ./ length(out2d)
+        ta = [sum(real(out2d[i].full2d),dims=1) for i in 1:length(out2d)] ./ length(out2d)
         plot(ω,vcat(ta...)')
         plot(ω,zeros(size(ω)),linestyle = "dashed")
         xlabel("Energy/frequency")

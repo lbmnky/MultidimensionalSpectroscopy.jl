@@ -267,6 +267,8 @@ In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d
 ### Coupled dimer inside a cavity
 [back to TOC](#examplesTOC)
 
+This example simulates a coupled dimer system, coupled to a cavity. The figure shows the dimer geometry (J-aggregate), the distribution of the transition dipole moment, the energy level diagram for the subsystems and the total coupled system, the populations in either of the two excited dimer states, the cavity mode, and the ground state, the correlation function and the absorption spectrum (green using a redfield master equation).
+
 <p float="left">
 <img src="example_images/dimer_in_cavity.png"  width=100%/>
 </p>
