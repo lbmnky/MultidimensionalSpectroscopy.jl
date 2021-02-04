@@ -97,6 +97,7 @@ The following examples [(scripts)](/examples) are available:
     - [Disentangling rephasing and non-rephasing signals](#disentangling-rephasing-and-non-rephasing-signals)
     - [Convolution with laser spectrum](#convolution-with-laser-spectrum)
     - [Coupled dimer inside a cavity](#coupled-dimer-inside-a-cavity)
+    - [Tavis-Cummings with ensemble of TLSs](#tavis-cummings-with-ensemble-of-tlss)
 
 
 <a name="coupledDimer"></a>
@@ -273,4 +274,12 @@ This example simulates a coupled dimer system, coupled to a cavity. The figure s
 <img src="example_images/dimer_in_cavity.png"  width=100%/>
 </p>
 
+<a name="TCensemble"></a>
+### Tavis-Cummings with ensemble of TLSs
+[back to TOC](#examplesTOC)
+
+<p float="left">
+<img src="example_images/TC_withDetunedTLSs_a.png"  width=49%/>
+<img src="example_images/TC_withDetunedTLSs_b.png" width=49%/>
+</p>
 
