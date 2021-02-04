@@ -27,7 +27,7 @@ at  = create(A)
 H_r = (ωr * at * a)
 
 # set number of two-level systems to be used
-num_of_TLSs = 4
+num_of_TLSs = 2
 # SINGLE TLS parameters
 ω_TLS  = 5                              # Energy
 N_TLS  = 2                              # number of states (GS, 1st ES, ...)
@@ -50,14 +50,38 @@ Sp = dagger(Sm)
 # jump operators for Lindblad time evolution
 # j_ops needs to be "list" of objects for relaxation from the individual excited states
 temp = one(sm)
-temp.data[2,2] = 1/(2)
-#j_ops = [tensor(circshift(append!([sm],repeat([one(sm)],num_of_TLSs-1)),i-1)...) for i in 1:num_of_TLSs]
-j_ops = 1 * [tensor(circshift(append!([sm],repeat([temp],num_of_TLSs-1)),i-1)...) for i in 1:num_of_TLSs]
+#temp.data[2,2] = 1/sqrt(2)
+
+# Lindblad operators for relaxation of each TLS to ground state
+# Lᵢ = Σ{j=1}{N²-1} uⱼᵢAⱼ ... what's what ?
+# N-dimensional system: N=2 molecules -> 4-1=3
+L = .1 * [tensor(circshift(append!([sm],repeat([temp],num_of_TLSs-1)),i-1)...) for i in 1:num_of_TLSs]
+# L[1] = [sm ⊗ temp ⊗ temp ⊗ ...]
+# L[2] = [temp ⊗ sm ⊗ temp ⊗ ...]
+# L[3] = ...
+
+# coupling/decay between TLS i and i+1
+# K[1] = [sm ⊗ sp ⊗ temp ⊗ ...]
+# K[2] = [temp ⊗ sm ⊗ sp ⊗ ...]
+K = .4 * [tensor(circshift(append!([sm,sp],repeat([one(temp)],num_of_TLSs-2)),i-1)...) for i in 1:num_of_TLSs+1]
+
+# coupling between TLS i and i+2
+append!(L,K)
 #j_ops = [tensor(circshift(append!([sm],[j*one(sm) for j in 1:num_of_TLSs-1 ]),i-1)...) for i in 1:num_of_TLSs]
 
-j_ops_b = 1.2 * [tensor(circshift(append!([sp,sm],repeat([temp],num_of_TLSs-2)),i-1)...) for i in 1:num_of_TLSs]
-pop!(j_ops_b)
-append!(j_ops,j_ops_b)
+#j_ops_b = 1. * [tensor(circshift(append!([sp,sm],repeat([temp],num_of_TLSs-2)),i-1)...) for i in 1:num_of_TLSs]
+#j_ops_c = 1. * [tensor(circshift(append!([sm,sp],repeat([temp],num_of_TLSs-2)),i-1)...) for i in 1:num_of_TLSs]
+#j_ops_d = 1. * [tensor(circshift(append!([sp,temp,sm],repeat([temp],num_of_TLSs-3)),i-1)...) for i in 1:num_of_TLSs]
+#j_ops_e = 1. * [tensor(circshift(append!([sm,temp,sp],repeat([temp],num_of_TLSs-3)),i-1)...) for i in 1:num_of_TLSs]
+#pop!(j_ops_b)
+#pop!(j_ops_c)
+
+
+#append!(j_ops,j_ops_b)
+#append!(j_ops,j_ops_c)
+
+#j_ops = [j_ops[i] + dagger(j_ops[i]) for i in 1:length(j_ops)]
+
 # transition dipole operators
 # transitions from GS
 μ12   = +([tensor(circshift(push!([sm],repeat([sm*sp],num_of_TLSs-1)...),i-1)...) for i in 1:num_of_TLSs]...)
@@ -150,10 +174,10 @@ pcolormesh(real(rho1.data),edgecolor="k",cmap="Blues",linewidth=".5")
 tlist = [0:0.3:100;]
 
 Γ     = [.3] #.1 * [.1,.6]
-j_ops = Γ .* j_ops
+#L = Γ .* L
 
 # master equation time evolution
-tout, rhot = timeevolution.master(tlist,rho1,H,j_ops);#;rates=Γ);
+tout, rhot = timeevolution.master(tlist,rho1,H,L);#;rates=Γ);
 cmds.view_dm_evo(rhot,5)
 
 n_gs = real(expect(rho0, rhot))
@@ -181,9 +205,9 @@ rhotest.data[2,2] = 1
 
 # calculate correlation function
 # for ground state absorption
-corr    = timecorrelations.correlation(tlist, rho0, H, j_ops, μ12, μ12);
+corr    = timecorrelations.correlation(tlist, rho0, H, L, μ12, μ12);
 # for excited state (rho1) absorption
-corr    = timecorrelations.correlation(tlist, rho1, H, j_ops, μ23, μ23);
+#corr    = timecorrelations.correlation(tlist, rho1, H, j_ops, μ23, μ23);
 
 # calculate spectrum from correlation
 ω, spec = timecorrelations.correlation2spectrum(tlist, corr; normalize_spec=true);
@@ -206,8 +230,69 @@ function noise_power(ω)
 end
 test = Sm*Sp
 test.data = tril(triu(test.data))
-a_ops = [sqrt(.5)*test, noise_power]
-R, ekets = timeevolution.bloch_redfield_tensor(H, [a_ops], J=j_ops)
+#a_ops = [sqrt(.5)*test, noise_power];
+
+#S = append!(j_ops_b,j_ops_c)
+
+#a_ops = [[10 * j_ops_b[i] * j_ops_b[i]', noise_power] for i in 1:length(j_ops_b)];
+#a_ops = []
+
+a_ops = [1/3 * tensor(circshift(append!([sm*sp],repeat([one(b_TLS)],num_of_TLSs-1)),i)...) for i in 1:num_of_TLSs]
+
+
+temp2 = []
+for i = 1:length(K)
+    println(i)
+    append!(temp2,[.3 * (K[i] + dagger(K[i]))])
+    append!(temp2,[noise_power])
+end
+
+S = temp2
+
+
+## Here, the TLSs are not coupled to each other. S describes the energy transfer
+#  between TLSs and L describes the decay of each individual TLS to the ground
+#  state. Thus S must be an off-diagonal element connecting two diagonal
+#  populations (between two TLSs) and L is off-diagonal between each TLS and the
+#  ground state.
+#R, ekets = timeevolution.bloch_redfield_tensor(H, a_ops, J=0.1 .* append!(j_ops_b,j_ops_c))
+R, ekets = timeevolution.bloch_redfield_tensor(H, [S], J= .3 .* L)
+
+tout, rhot = timeevolution.master_bloch_redfield(tlist,μ12*rho0,R,H);
+corr = expect(μ12,rhot);
+
+zp = 11
+corr = cmds.zeropad(corr,zp)
+tnew, ~ = cmds.interpt(tout,zp)
+
+ω,spec = timecorrelations.correlation2spectrum(tnew, corr; normalize_spec=true)
+
+sca(ax1)
+plot(tnew,real(corr),"g",linewidth=1,label="RF")
+sca(ax2)
+plot(ω,spec,"g",linewidth=1,label="RF")
+
+rho1 = μ12 * rho0 * μ12
+tout, rhot = timeevolution.master_bloch_redfield(tlist,rho1,R,H);
+
+n_gs = real(expect(rho0, rhot))
+n_es = real(expect(rho1, rhot))
+
+leg = []
+# plot population
+figure(figsize=(10,4));
+subplot(121)
+plot(tout,n_gs); leg = ["ngs"]
+plot(tout,n_es); append!(leg,["nes"])
+legend(leg)
+leg = []
+subplot(122)
+for i in 1:length(eivecs)
+    n_es = real(expect(dm(eivecs[i]),rhot))
+    plot(tout,n_es); append!(leg,[string(i)])
+    ylim(0, 1)
+end
+legend(leg)
 
 # select methods for time evolution during 2D calculation
 method = "lindblad"
@@ -215,11 +300,13 @@ method = "lindblad"
 
 # change parameters
 if method == "lindblad"
-    F = j_ops
+    F = L
+    use_sub = true
 elseif method == "redfield"
     F = R
+    use_sub = false
 end
-
+#calc_2d = false
 if calc_2d
     ## calculate (complex) 3rd order corr function (with T=0)
     zp = 10 # zeropad up to 2^zp
@@ -234,12 +321,12 @@ if calc_2d
     # multithreading (run several T steps in parallel)!
     Threads.@threads for i = 1:length(T)
         out2d[i] = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
-                                            method;debug=true,use_sub=false,
+                                            method;debug=true,use_sub=use_sub,
                                                 zp=zp)
     end
 
     ## crop 2D data and increase dw
-    out2d = [cmds.crop2d(out2d[i],1;w_max=20,step=2) for i = 1:length(T)]
+    out2d = [cmds.crop2d(out2d[i],4;w_max=6,step=1) for i = 1:length(T)]
 
     ## assign ω-axis from output
     #ω = out2d[1].ω
@@ -252,7 +339,7 @@ if calc_2d
     ## make  subplot layout
     nplots = length(T);
     ncols = Int32(ceil(sqrt(nplots)));
-    nrows = Int32(ceil(nplots / ncols))
+    nrows = Int32(ceil(nplots / ncols));
 
     ## create figure
     #figure(figsize=(ncols*3+0.2,nrows*3+0.2));
@@ -263,8 +350,13 @@ if calc_2d
     #    title("2D spectrum at $(T[i]) fs")
         #xlim([0, E₁+E₂]); ylim([0, E₁+E₂]);
     #end
-    fig, ax = subplots(nrows,ncols,sharex=true,sharey=true,figsize=(ncols*4,nrows*3))
-    suptitle(rep * " 2D spectrum (" * scal * ". scaling)")
+
+    # determine maximum value in dataset out2d[:].full2d[:,:]
+    maxi = maximum([maximum(real(out2d[i].full2d)) for i in 1:length(out2d)])
+
+    # plot 2D spectra
+    fig, ax = subplots(nrows,ncols,sharex=true,sharey=true,figsize=(ncols*3.2,nrows*3))
+    fig.suptitle(rep * " 2D spectrum (" * scal * ". scaling)")
     k = 0
     for i = 1:ncols
         for j = 1:nrows
@@ -274,12 +366,22 @@ if calc_2d
                 continue
             end
             ax[i,j].set_aspect="equal"
-            cmds.plot2d(out2d[k].ω,round.(out2d[k].full2d,digits=1);repr=rep,scaling=scal)
+            cmds.plot2d(out2d[k].ω,round.(out2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
             title("2D spectrum at $(T[k]) fs")
             colorbar()
         end
     end
+    tight_layout()
+    subplots_adjust(top=0.8)
+
+    ## plot TA (summed 2D spectrum)
+    figure()
+    ta = [sum(out2d[i].full2d,dims=1) for i in 1:length(out2d)]
+    [plot(out2d[1].ω,ta[i]') for i in 1:length(ta)]
+
 end
+
+
 
 ## How to check execution time (run twice after function assignment!):
 

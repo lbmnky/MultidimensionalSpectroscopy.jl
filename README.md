@@ -98,6 +98,8 @@ The following examples [(scripts)](/examples) are available:
     - [Convolution with laser spectrum](#convolution-with-laser-spectrum)
     - [Coupled dimer inside a cavity](#coupled-dimer-inside-a-cavity)
     - [Tavis-Cummings with ensemble of TLSs](#tavis-cummings-with-ensemble-of-tlss)
+      - [No disorder of TLSs energies](#no-disorder-of-tlss-energies)
+      - [With disorder of TLSs energies](#with-disorder-of-tlss-energies)
 
 
 <a name="coupledDimer"></a>
@@ -277,6 +279,14 @@ This example simulates a coupled dimer system, coupled to a cavity. The figure s
 <a name="TCensemble"></a>
 ### Tavis-Cummings with ensemble of TLSs
 [back to TOC](#examplesTOC)
+
+#### No disorder of TLSs energies
+
+<p float="left">
+<img src="example_images/TC_withoutDetunedTLSs.png"  width=49%/>
+</p>
+
+#### With disorder of TLSs energies
 
 <p float="left">
 <img src="example_images/TC_withDetunedTLSs_a.png"  width=49%/>
