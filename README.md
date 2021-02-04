@@ -75,21 +75,28 @@ Make sure to disable all output plots within ``cmds.make2Dspectra()`` when using
 <a name="examplesTOC"></a>
 ## Examples
 
-The following [example scripts](/examples) are available.
+The following examples [(scripts)](/examples) are available:
 
-- [coupled Dimer](#coupledDimer)
-- [coupled Dimer with detuning](#coupledDimerDetuned)
-- [displaced Oscillator](#DO)
-  - [vibrational coherence during T](#vibrationalCoherences)
-- [How to calculated Franck-Condon factors for a Morse potential](#FCFmorse)
-- [Jaynes-Cummings model](#jaynesCummings)
-- [disordered ensemble of two-level systems with relaxation](#ensembleDisorder)
-  - [evolution of the density matrix visualized](#evolutionDensityMatrix)
-- [Tavis-Cummings model](#tavisCummings)
-- [lookings at GSB, SE and ESA seperately](#GSB-SE-ESA)
-- [R and NR](#R-NR)
-- [Convolution with a laser pulse](#laserConvolution)
-- [Coupling a coupled dimer to a cavity](#coupledDimerCavity)
+- [CMDS.jl](#cmdsjl)
+  - [Introduction](#introduction)
+  - [Installation](#installation)
+  - [CMDS.jl - Functions](#cmdsjl---functions)
+    - [Available functions:](#available-functions)
+    - [How to use:](#how-to-use)
+  - [Examples](#examples)
+    - [coupled_dimer.jl](#coupled_dimerjl)
+    - [coupledDimer.jl with slightly detuned monomers and reduced coupling](#coupleddimerjl-with-slightly-detuned-monomers-and-reduced-coupling)
+    - [displaced_harmonic_oscillator_model.jl](#displaced_harmonic_oscillator_modeljl)
+      - [Does it wiggle?](#does-it-wiggle)
+    - [FCF_morse-potential.jl](#fcf_morse-potentialjl)
+    - [Jaynes-Cummings model](#jaynes-cummings-model)
+    - [Ensemble of two-level systems with disorder](#ensemble-of-two-level-systems-with-disorder)
+      - [Evolution of density matrix](#evolution-of-density-matrix)
+    - [Tavis-Cummings](#tavis-cummings)
+    - [Disentangling GSB, SE and ESA contributions](#disentangling-gsb-se-and-esa-contributions)
+    - [Disentangling rephasing and non-rephasing signals](#disentangling-rephasing-and-non-rephasing-signals)
+    - [Convolution with laser spectrum](#convolution-with-laser-spectrum)
+    - [Coupled dimer inside a cavity](#coupled-dimer-inside-a-cavity)
 
 
 <a name="coupledDimer"></a>
@@ -137,10 +144,10 @@ Of course, the latter is still greatly simplified.
 
 
 <a name="vibrationalCoherences"></a>
-#### Does it wiggle too?
+#### Does it wiggle?
 [back to TOC](#examplesTOC)
 
-The following calculations were done using the [displaced oscillator](examples\displaced_harmonic_oscillator_model.jl) model. During the population time T, the diagonal elements of the density matrix are set to zero (search for keyword "XX" in ``cmds.correlations()``; will be implemented better in a future version). The following figures show the absolute value 2D spectra, which a in a vibrational coherence during T:
+The following calculations were done using the [displaced oscillator](examples\displaced_harmonic_oscillator_model.jl) model. During the population time T, the diagonal elements of the density matrix are set to zero (search for keyword "XX" in ``cmds.correlations()``; will be implemented better in a future version). The following figures show the absolute value [rephasing and non-rephasing](#R-NR) 2D spectra, which are in a vibrational coherence during T:
 
 <p float="center">
 <img src="example_images\DO_GSB_R_osc.png" width=45%/>
@@ -149,6 +156,7 @@ The following calculations were done using the [displaced oscillator](examples\d
 <img src="example_images\DO_SE_NR_osc.png" width=45%/>
 </p>
 
+Analysis thereof potentially reveals whether a vibrational coherence "lives" on the ground or excited electronic state.
 
 <a name="FCFmorse"></a>
 ### FCF_morse-potential.jl
@@ -231,9 +239,9 @@ CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.s
 <!--![GSB](/example_images/coupledDimer_GSB.png)-->
 
 <p float="center">
-<img src="/example_images/coupledDimer_GSB.png" width=32%/>
-<img src="/example_images/coupledDimer_SE.png"  width=32%/>
-<img src="/example_images/coupledDimer_ESA.png" width=32%/>
+<img src="example_images/coupledDimer_GSB.png" width=32%/>
+<img src="example_images/coupledDimer_SE.png"  width=32%/>
+<img src="example_images/coupledDimer_ESA.png" width=32%/>
 </p>
 
 <!--![SE](/example_images/coupledDimer_SE.png)-->
@@ -247,8 +255,8 @@ CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.s
 In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d_nr) parts of the signal are available:
 
 <p float="left">
-<img src="/example_images/coupledDimer_r.png"  width=49%/>
-<img src="/example_images/coupledDimer_nr.png" width=49%/>
+<img src="example_images/coupledDimer_r.png"  width=49%/>
+<img src="example_images/coupledDimer_nr.png" width=49%/>
 </p>
 
 <a name="laserConvolution"></a>
@@ -258,3 +266,5 @@ In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d
 <a name="coupledDimerCavity"></a>
 ### Coupled dimer inside a cavity
 [back to TOC](#examplesTOC)
+
+
