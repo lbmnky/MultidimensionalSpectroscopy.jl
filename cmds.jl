@@ -1,11 +1,10 @@
 module cmds
 
 export create_colormap, zeropad, interpt, make2Dspectra, correlations,
-        view_dm_evo, save_2d, plot2d, crop2d, tri
+        view_dm_evo, save_2d, plot2d, crop2d, tri, absorptionSpectrum, plot2d_comps,
+         pretty_show_mat, vib_analysis
 
 using QuantumOptics, FFTW, LinearAlgebra, PyPlot, Colors, DelimitedFiles, Printf
-
-
 
 """
     plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin")
@@ -41,6 +40,8 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
 
     ## make levels for contourplot with different scaling
     lvls = [-1.025:0.05:1.025;]
+    lvls = [-1,-.9,-.8,-.7,-.6,-.5,-.4,-.3,-.2,-.1,-.08,-.06,-.04,-.02,-.01,-0.001, 0,
+                .001,.01,.02,.04,.06,.08,.1,.2,.3,.4,.5,.6,.7,.8,.9,1];
     if scaling == "lin"
         #
     elseif scaling == "tan"
@@ -69,12 +70,16 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
     ## plot data as filled contour
     conv = "ω3ω1"
     if conv == "ω1ω3"
-        contourf(ω,ω,data,lvls,cmap=create_colormap());
-        xlabel("ω₃"); ylabel("ω₁"); #clim([m, M]);
+        cs = contourf(ω,ω,data,lvls,cmap=create_colormap()); colorbar();
+        cs2 = contour(cs,levels=cs.levels[:],colors="gray",linewidths=(.5,))
+        xlabel("detection (ω₃)"); ylabel("excitation (ω₁)"); #clim([m, M]);
     elseif conv == "ω3ω1"
-        contourf(ω,ω,transpose(data),lvls,cmap=create_colormap());
-        xlabel("ω₁"); ylabel("ω₃");
+        cs = contourf(ω,ω,transpose(data),lvls,cmap=create_colormap());
+        cs2 = contour(cs,levels=cs.levels[:],colors="gray",linewidths=(.5,))
+        xlabel("excitation (ω₁)"); ylabel("detection (ω₃)");
     end
+    cbar = colorbar(cs)
+    cbar.add_lines(cs2)
     plot([ω[1], ω[end]], [ω[1], ω[end]],"k--");
 
     ## plot positive and negative contourlines with different linestyles
@@ -187,7 +192,7 @@ function zeropad(dat, N)
     elseif N == 0
         # if N == zero, return original data
         println("\nNo zero padding.\n")
-        return dat
+        return dat;
     end
 
     # Sanity check that N is not too large
@@ -198,10 +203,10 @@ function zeropad(dat, N)
     if N > 0
         # switch between 1D and 2D array
         if size(dat,2) == 1
-            out = complex(zeros(2^N))
+            out = complex(zeros(2^N));
             println("\nZeropadding 1D-data to $(2^N) values\n")
         elseif size(dat,2) > 1
-            out = complex(zeros(2^N,2^N))
+            out = complex(zeros(2^N,2^N));
             println("\nZeropadding 2D-data to $(2^N) x $(2^N) values\n")
         end
 
@@ -231,7 +236,7 @@ function interpt(tlist, N)
     if 0 < N < log2(length(tlist))
         N = ceil(log2(size(dat,1)))
     elseif N == 0
-        tlist = tlist
+        tlist = tlist;
     end
 
     # Sanity check that N is not too large
@@ -242,12 +247,12 @@ function interpt(tlist, N)
     if N > 0
         # extrapolate tlist / get new tlist[end]
         dt = abs(tlist[end]-tlist[1]) / (length(tlist)-1)
-        tlist = [0:(2^N)-1;] * dt .+ tlist[1]
+        tlist = [0:(2^N)-1;] * dt .+ tlist[1];
     end
 
     # create ω axis corresponding to zeropadded data
     dω = 1/tlist[end]
-    ω = ([1:length(tlist);] .- length(tlist)/2 ) * dω * 2 * π
+    ω = ([1:length(tlist);] .- length(tlist)/2 ) * dω * 2 * π;
     # return zeropadded data, corresponding ω and tlist
 
     return tlist, ω;
@@ -284,9 +289,6 @@ mutable struct out2d
 end
 
 
-
-
-
 """
     out2d = make2dspectra(tlist, rho0, H, F, μ12, μ23, method; debug=false, zp=0)
 
@@ -318,19 +320,17 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     println("############# calculate R and NR pathways #############");
     println("############# ########################### #############\n");
 
-    # TODO make subspace for GSB and SE pathways with only single excited manifold -- DOne
-
-    Eivecs = eigvecs(dense(H).data)
-
-    L = length(H.basis_l.bases)
-    n_sub = 1 + L + binomial(L,2)
-    Eivecs_sub = [Ket(H.basis_l,Eivecs[:,i]) for i in 1:n_sub]
-    b_sub = SubspaceBasis(H.basis_l,Eivecs_sub)
-
-    P = sparse(projector(b_sub, (H.basis_l)))
-    Pt = dagger(P)
 
     if use_sub
+        Eivecs = eigvecs(dense(H).data)
+        L = length(H.basis_l.bases)
+        n_sub = 1 + L + binomial(L,2)
+        Eivecs_sub = [Ket(H.basis_l,Eivecs[:,i]) for i in 1:n_sub]
+        b_sub = SubspaceBasis(H.basis_l,Eivecs_sub)
+
+        P = sparse(projector(b_sub, (H.basis_l)))
+        Pt = dagger(P)
+
         println("dim(subspace): ", length(b_sub))
         H_bi    = P * H * Pt
         μ12_bi  = P * μ12 * Pt
@@ -345,24 +345,41 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
         F_bi    = F
     end
 
+    # TODO can use a 2D lineshape function to cause inhomogeneous broadening, but need to decrease rate
+    # of Lindblad operators beforehand ... very narrow transition, then broadened by lineshape function
+    # inhomogeneously
+    D = .1
+    τc = 35
+    gt = D^2 * τc^2 * (exp.(-tlist./τc) .+ tlist./τc .- 1)
+    test = false
+
     # excited state absorption
     corr_func_NR_esa = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"NR_esa",method,false; t2coh=t2coh)
     corr_func_R_esa  = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"R_esa", method,false; t2coh=t2coh)
     #rhots_NR_esa = rhots_NR_esa - conj(rhots_NR_esa)
     #rhots_R_esa  = rhots_R_esa  - conj(rhots_R_esa)
+    if test
+        corr_func_NR_esa = corr_func_NR_esa .* (exp.(-gt) * exp.(-gt)')
+        corr_func_R_esa = corr_func_R_esa .* (exp.(-gt) * exp.(-gt)')
+    end
 
     # excited state absorption ... from GS
     corr_func_NR_esax = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"NR_esax",method,false; t2coh=t2coh)
     corr_func_R_esax  = correlations(tlist,rho0_bi,H_bi,F_bi,μ12_bi,μ23_bi,T,"R_esax", method,false; t2coh=t2coh)
-
-    n_sub       = 1 + L
-    Eivecs_sub  = [Ket(H.basis_l,Eivecs[:,i]) for i in 1:n_sub]
-    b_sub       = SubspaceBasis(H.basis_l,Eivecs_sub)
-
-    P  = sparse(projector(b_sub, (H.basis_l)))
-    Pt = dagger(P)
+    if test
+        corr_func_NR_esax = corr_func_NR_esax .* (exp.(-gt) * exp.(-gt)')
+        corr_func_R_esax  = corr_func_R_esax .* (exp.(-gt) * exp.(-gt)')
+    end
 
     if use_sub
+        n_sub       = 1 + L
+        Eivecs_sub  = [Ket(H.basis_l,Eivecs[:,i]) for i in 1:n_sub]
+        b_sub       = SubspaceBasis(H.basis_l,Eivecs_sub)
+
+        P  = sparse(projector(b_sub, (H.basis_l)))
+        Pt = dagger(P)
+
+
         println("dim(subspace): ", length(b_sub))
         H_si    = P * H * Pt
         μ12_si  = P * μ12 * Pt
@@ -379,15 +396,23 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
 
     # ground state bleach
     corr_func_NR_gsb = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"NR_gsb",method,false; t2coh=t2coh)
-    corr_func_R_gsb  = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"R_gsb", method,true; t2coh=t2coh)
+    corr_func_R_gsb  = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"R_gsb", method,false; t2coh=t2coh)
     #rhots_NR_gsb = rhots_NR_gsb - conj(rhots_NR_gsb)
     #rhots_R_gsb  = rhots_R_gsb  - conj(rhots_R_gsb)
+    if test
+        corr_func_NR_gsb = corr_func_NR_gsb .* (exp.(-gt) * exp.(-gt)')
+        corr_func_R_gsb = corr_func_R_gsb .* (exp.(-gt) * exp.(-gt)')
+    end
 
     # stimulated emission
     corr_func_NR_se = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"NR_se",method,false; t2coh=t2coh)
     corr_func_R_se  = correlations(tlist,rho0_si,H_si,F_si,μ12_si,μ23_si,T,"R_se", method,false; t2coh=t2coh)
     #rhots_NR_se = rhots_NR_se - conj(rhots_NR_se)
     #rhots_R_se  = rhots_R_se  - conj(rhots_R_se)
+    if test
+        corr_func_NR_se = corr_func_NR_se .* (exp.(-gt) * exp.(-gt)')
+        corr_func_R_se = corr_func_R_se .* (exp.(-gt) * exp.(-gt)')
+    end
 
 
     # divide first value by .5 (see Hamm and Zanni)
@@ -468,6 +493,10 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
                circshift(reverse(spec2d_R_se  ,dims=2),(0,1)) +
                circshift(reverse(spec2d_R_esa ,dims=2),(0,1))# +
 #               circshift(reverse(spec2d_R_esax,dims=2),(0,1));
+    spec2d_r =  spec2d_R_gsb +
+                spec2d_R_se  +
+                spec2d_R_esa# +
+                #spec2d_R_esax
 
     spec2d_nr = spec2d_NR_gsb +
                 spec2d_NR_se  +
@@ -606,7 +635,11 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
     ## switch between Lindblad and Redfield master equation
     t_ev(A,B,C,D) =
         if method == "lindblad"
-            timeevolution.master(A,B,C,D)
+            if isempty(methods(H))
+                timeevolution.master(A,B,C,D)
+            elseif !isempty(methods(H))
+                timeevolution.master_dynamic(A,B,C)
+            end
         elseif method == "redfield"
             timeevolution.master_bloch_redfield(A,B,D,C)
         else
@@ -656,9 +689,19 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
         μexp_cc =  μ_ge
     end
 
+
+
     # calculate evolution during t1(τ)
     τ = tlist; tout, rho1_τ    = t_ev(τ,rho1,H,F)
     τ = tlist; tout, rho1_τ_cc = t_ev(τ,rho1_cc,H,F)
+
+    # TODO damping function τ, implement somehow in redfield ??
+    #D = .4
+    #τc = 10
+    #gt = (exp.(-τ./τc) .+ τ./τc .- 1)
+
+    #rho1_τ = rho1_τ .* exp.(-gt)
+    #rho1_τ_cc = rho1_τ_cc .* exp.(-gt)
 
     # now, use every rho(τ) as starting point to calculate second coherence
     # time (t) dependence. Note that first interaction with μ puts density
@@ -865,13 +908,16 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
 
     #    t = tlist; tout, rho3_t_cc  = t_ev(t,rho3_cc,H,F)
 
-
-
         # calc. exp. v. for GSB and SE (μexp = μ12) and for ESA (μexp = μ23)
         corr[i,:]    = real(expect(μexp,conj(rho3_t)))
     #    corr_cc[i,:] = real(expect(μexp_cc,conj(rho3_t_cc)))
 
         #corr = corr + corr_cc
+        # TODO damping function t
+        #D = .4
+        #τc = 10
+        #gt = (exp.(-t./τc) .+ t./τc .- 1)
+        #corr[i,:] = corr[i,:] .* exp.(-gt)
 
         # ALTERNATIVELY take the trace: Tr(Aρ)
         #for j=1:length(t)
@@ -931,6 +977,37 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
 end
 
 """
+    ω, corr, spec
+
+function to calculate absorption spectrum.
+"""
+function absorptionSpectrum(t, rho, H, F, μ; zp=11)
+
+    """
+    Eivecs = eigvecs(dense(H).data)
+    L = length(H.basis_l.bases)
+    n_sub = 1 + L # + binomial(L,2)
+    Eivecs_sub = [Ket(H.basis_l,Eivecs[:,i]) for i in 1:n_sub]
+    b_sub = SubspaceBasis(H.basis_l,Eivecs_sub)
+
+    P = sparse(projector(b_sub, (H.basis_l)))
+    Pt = dagger(P)
+
+    println("dim(subspace): ", length(b_sub))
+    H    = P * H * Pt
+    μ    = P * μ * Pt
+    rho  = P * rho * Pt
+    F    = [P * F[i] * Pt for i in 1:length(F)]
+    """
+
+    corr = timecorrelations.correlation(t, rho, H, F, μ, μ)
+    corr_intp = zeropad(corr,zp)
+    t_intp, ω_intp = interpt(t,zp)
+    ω, spec = timecorrelations.correlation2spectrum(t, corr; normalize_spec=true)
+    return ω, corr, spec
+end
+
+"""
     out = tri(dat, uplo)
 
 function used internally by cmds.jl to select upper triagular (uplo="U") or lower
@@ -944,6 +1021,60 @@ function tri(dat,uplo)
     #    out.data = triu(out.data)
     #end
     return out;
+end
+
+function plot2d_comps(data)
+
+    figure(figsize=(12,3))
+    subplot(131)
+    plot2d(data.ω, data.gsb)
+    subplot(132)
+    plot2d(data.ω, data.se)
+    subplot(133)
+    plot2d(data.ω, data.esa)
+    tight_layout()
+    return
+end
+
+function pretty_show_mat(data)
+    fig, ax = plt.subplots()
+    im = ax.imshow(data)
+    for i in 1:size(data,1)
+        for j in 1:size(data,2)
+            ax.text(i-1,j-1,round(data[i,j],digits=2),ha="center",va="center")
+        end
+    end
+end
+
+"""
+    function vib_analysis(data)
+
+Used to quickly plot GSB, SE and ESA rephasing (R) and non-rephasing (NR) spectra. Useful for checking
+for beating patterns, but could also be used to look at individual components of "normal" 2D dataset.
+
+# Arguments
+* 'data'   : just the 2D as (e.g. out2d[1])
+"""
+function vib_analysis(data)
+     fig, ax = subplots(3,2,sharex=true,sharey=true,figsize=(2*3.2,3*3))
+     sca(ax[1,1])
+     plot2d(data.ω,abs.(data.gsb_r))
+     title("GSB R")
+     sca(ax[1,2])
+     plot2d(data.ω,abs.(data.gsb_nr))
+     title("GSB NR")
+     sca(ax[2,1])
+     plot2d(data.ω,abs.(data.se_r))
+     title("SE R")
+     sca(ax[2,2])
+     plot2d(data.ω,abs.(data.se_nr))
+     title("SE NR")
+     sca(ax[3,1])
+     plot2d(data.ω,abs.(data.esa_r))
+     title("ESA R")
+     sca(ax[3,2])
+     plot2d(data.ω,abs.(data.esa_nr))
+     title("ESA NR")
 end
 
 end # module
