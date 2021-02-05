@@ -1,6 +1,8 @@
 #!/usr/bin/julia
 using PyPlot, QuantumOptics, LinearAlgebra, FFTW, Colors,
         Printf, DelimitedFiles
+
+## some theory
 # chem.libretexts.org/Bookshelves/Physical_and_Theoretical_Chemistry_Textbook_Maps/Book%3A_Time_Dependent_Quantum_Mechanics_and_Spectroscopy_(Tokmakoff)/13%3A_Coupling_of_Electronic_and_Nuclear_Motion/13.01%3A_The_Displaced_Harmonic_Oscillator_Model
 # www.scm.com/doc/ADF/Input/Vibrationally_resolved_el_spectra.html
 
@@ -22,68 +24,57 @@ cmp = cmds.create_colormap("bright");
 
 calc_2d = true
 
-D_HR = .65
+## Huang-Rhys factor
+D_HR = .55
 d = sqrt(D_HR)
 
-b_tls = NLevelBasis(2)  # Hilbert-space of system                   Basis: {|ui⟩}
-b_vib = FockBasis(1)    # Hilbert-space of oscillator               Basis: {|vi⟩}
-b = b_tls ⊗ b_vib       # combined basis
+b_tls = NLevelBasis(2)          # Hilbert-space of system                   Basis: {|ui⟩}
+b_vib = FockBasis(1)            # Hilbert-space of oscillator               Basis: {|vi⟩}
+b     = b_tls ⊗ b_vib          # combined basis
 
-#=
-# operators direct in b
-# transition operators system
-j21 = transition(b_tls,2,1) ⊗ one(b_vib)
-j12 = dagger(j21)
-
-# creation, annihilation operator vib mode
-at = one(b_tls) ⊗ create(b_vib)
-a = dagger(at)
-
-# displacement is in b_vib only
-D = one(b_tls) ⊗ displace(b_vib,d)
-=#
 j21 = transition(b_tls,2,1)                     # |e⟩⟨g|
 j12 = dagger(j21)                               # |g⟩⟨e|
-at = create(b_vib)                              # ...
-a = dagger(at)
-D = displace(b_vib,d)
+at  = create(b_vib)                             # ...
+a   = dagger(at)
+D   = displace(b_vib,d)
 
 # ground states
 Eg = 0
-ωg = .6
+ωg = .15
 Hg_el = Eg * j12 * j21     # == HG = g * Eg ⊗ dagger(g)
-Hg_vib = ωg * (at*a + a*at * 1/2)
+#Hg_vib = ωg * (at*a + a*at * 1/2)
+Hg_vib = ωg * (number(b_vib) + identityoperator(b_vib) * 1/2)
 Hg = Hg_el ⊗ one(b_vib) + j12*j21 ⊗ Hg_vib
 #Hg = Hg_el ⊗ Hg_vib
 
-# HAVE TO created excited states w/o displaced potential and the use displacement
+# HAVE TO created excited states w/o displaced potential and then use displacement
 # operator to act on transition dipole moment ... or calculate FC factors and use
-# this as transition dipole operator ...
+# this as transition dipole operator ... #CHECK
 
 # excited state
-Ee = 2.05
+Ee = 1.65
+ωe = 0.15
 He_el = Ee * j21 * j12
-He_vib = dagger(D) * Hg_vib * D # issue with D and dagger(D)
+#He_vib = dagger(D) * Hg_vib * D # issue with D and dagger(D)
 #He_vib = D * Hg_vib * dagger(D) # issue with D and dagger(D)
-He_vib = Hg_vib  # TODO figure out what's going on here
+#He_vib = Hg_vib  # TODO figure out what's going on here
+He_vib = ωe * (number(b_vib) + identityoperator(b_vib) * 1/2)
 He = He_el ⊗ one(b_vib) + j21*j12 ⊗ He_vib
 #He = He_el ⊗ He_vib
 
+## full system Hamiltonian
 H = Hg + He
-println("Display Hamiltonian")
-#display(dense(H).data[1:10,1:4])
 
-# diagonalized Hamiltonian
-states = eigvecs(dense(H).data)
+## diagonalized Hamiltonian
+states   = eigvecs(dense(H).data)
 energies = eigvals(dense(H).data)
 
+# and GS
 energies_g, states_g = eigenstates(dense(Hg_vib))
-
+# and ES
 energies_e, states_e = eigenstates(dense(He_vib))
 
-# Display
-#display((states))
-#display(energies)
+## plot energy levels
 N = length(energies)
 println(Int8(ceil(N/2)))
 figure(figsize=(6,4))
@@ -91,24 +82,25 @@ subplot(121)
 scatter(zeros(Int8(ceil(N/2))), energies[1:Int8(ceil(N/2))])
 x = [-1:0.1:2*d;]
 
+# TODO: transform to position basis to plot PECs
 #xx = PositionBasis(0,10,200)
 #xxx = position(xx)
 
-m = 100            # arbitrary
-f = 1/2 * m * ωg^2
+m = 50                        # arbitrary value for m
+f = m * ωg^2
+# GS
 plot(x,f*x.^2)
-scatter(zeros(Int8(floor(N/2))) .+ d, energies[end-Int8(floor(N/2))+1:end])
+# ES
 plot(x,f * (x.-d).^2 .+ Ee)
+scatter(zeros(Int8(floor(N/2))) .+ d, energies[end-Int8(floor(N/2))+1:end])
 ylim(0, 6)
-
-#### go to position basis ?? ?
-#xpoints = samplepoints(b)
 
 #for i=1:length(states_g)
 #    plot(xpoints, abs2.(states_g[i].data).*40 .+ energies_g[i],color="k",linewidth=1)
 #    plot(xpoints, abs2.(states_e[i].data).*40 .+ energies_e[i],color="g",linewidth=1)
 #end
 
+## calculate Franck-Condon factors
 FC = complex(zeros(length(energies_g),length(energies_e)))
 for ii = 1:length(energies_g)
     for jj = 1:length(energies_e)
@@ -130,7 +122,7 @@ for n = 1:5
     ln[n] = exp(-d^2) * d^(2*n) / factorial(n)
 end
 
-### ????? which one ???
+### ????? which one ??? #CHECK
 D.data = FC
 
 μ = transition(b_tls,1,2) + transition(b_tls,2,1)
@@ -141,19 +133,19 @@ fill!(μ23.data,0)
 
 # initialize in groud state
 Psi0 = nlevelstate(b_tls,1) ⊗ fockstate(b_vib,0)
-rho0 = Psi0 ⊗ dagger(Psi0)  # Or do: rho0 = dm(Psi0)
+rho0 = Psi0 ⊗ dagger(Psi0)  # alt.: rho0 = dm(Psi0)
 
-# thermal density matrix ??? Must only populate vibrations
-#T = 0.01
-#rho0 = thermalstate(Hg,T)
+## TODO used thermally populated ground state instead
+#T = 0.01                               # Temperature T in what unit ? 
+#rho0 = thermalstate(H,T)
 
 #c_ops = [sqrt(0.05) * one(b_tls) ⊗ (a+at), sqrt(0.075) * (j21+j12) ⊗ one(b_vib)]
 Γ = [sqrt(0.05), sqrt(0.075)]
-c_ops = [Γ[1] * one(b_tls) ⊗ (a), Γ[2] * (j12) ⊗ one(b_vib)]
+L = Γ .* [one(b_tls) ⊗ a, j12 ⊗ one(b_vib)]
 
 tlist = [0:0.05:15;]*2*π
 
-corr = timecorrelations.correlation(tlist, rho0, H, c_ops, μ12, μ12)
+corr = timecorrelations.correlation(tlist, rho0, H, L, μ12, μ12)
 
 #tout, rhot = timeevolution.master(tlist,μ12*rho0,H,c_ops)
 #corr = expect(μ23,rhot)
@@ -170,7 +162,7 @@ tnew, ~ = cmds.interpt(tlist,zp)
                                                         normalize_spec=true)
 
 corr = []
-corr = timecorrelations.correlation(tlist, rho0, H, c_ops, μ12, μ12)
+corr = timecorrelations.correlation(tlist, rho0, H, L, μ12, μ12)
 ω_em, spec_em = timecorrelations.correlation2spectrum(tlist, corr;
                                                         normalize_spec=true)
 
@@ -184,16 +176,17 @@ for jj = 1:length(energies_g)
 end
 
 tight_layout()
-show()
 
+F = L # works with method "lindblad"
 
 if calc_2d
-    F = c_ops # works with method "lindblad"
-    zp = 10
+
+    ## zeropad up to 10^zp
+    zp = 11
 
     ## calculate 2d spectra at
     T = [0.]
-    #out2d = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T,"lindblad";debug=false,zp=zp);
+
     out2d = Array{cmds.out2d}(undef, length(T))
 
     # use multithreding...
@@ -206,7 +199,25 @@ if calc_2d
     end
 
     ## crop 2D data and increase dw
-    out2d = [cmds.crop2d(out2d[i],1.5;w_max=4,step=1) for i = 1:length(T)]
+    out2d = [cmds.crop2d(out2d[i],1.3;w_max=1.89,step=1) for i = 1:length(T)]
+
+    ## simulate effect of laser spectrum
+    laserSpec =  .3 * exp.(-(out2d[1].ω.-1.35).^2/(2*(.19)^2)) +
+                  exp.(-(out2d[1].ω.-1.6).^2/(2*(.11)^2)) +
+                   .3 * exp.(-(out2d[1].ω.-1.85).^2/(2*(.05)^2))
+    
+    ## plot laser spectrum
+    figure()
+    plot(out2d[1].ω,laserSpec)
+
+    ## 1D convoltion (in ω_excitation)
+    IRF = (laserSpec.^2*(ones(length(laserSpec)))')
+    ## 2D convolution
+    IRF = (laserSpec.^2*(laserSpec.^2)')
+
+    #for i in 1:length(out2d)
+        conv2d = out2d[1].full2d .* IRF
+    #end
 
     ## plot 2D spectra for each(?) T
     # what to plot
@@ -237,10 +248,9 @@ if calc_2d
             end
             sca(ax[i,j])
             ax[i,j].set_aspect="equal"
-            cmds.plot2d(out2d[k].ω,round.(out2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
-            #cmds.plot2d(out2d[k].ω,abs.(out2d[k].full2d_nr);repr=rep,scaling=scal,norm=0)
+            #cmds.plot2d(out2d[k].ω,round.(out2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
+            cmds.plot2d(out2d[k].ω,conv2d;repr=rep,scaling=scal,norm=0)
             title("2D spectrum at $(T[k]) fs")
-            colorbar()
         end
     end
     tight_layout()
@@ -248,11 +258,12 @@ if calc_2d
 
     ω = out2d[1].ω
 
-    plot([Ee-Eg, Ee-Eg] .+ 0*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
-    plot([Ee-Eg, Ee-Eg] .+ 2*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
+    #DELETE or improve
+    #plot([Ee-Eg, Ee-Eg] .+ 0*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
+    #plot([Ee-Eg, Ee-Eg] .+ 2*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
     #plot([Ee-Eg, Ee-Eg] .+ 4*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
-    plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 0*ωg,"k--",linewidth=0.5)
-    plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 2*ωg,"k--",linewidth=0.5)
+    #plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 0*ωg,"k--",linewidth=0.5)
+    #plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 2*ωg,"k--",linewidth=0.5)
     #plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 4*ωg,"k--",linewidth=0.5)
 
 end
