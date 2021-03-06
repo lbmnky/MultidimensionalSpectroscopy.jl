@@ -58,6 +58,22 @@ Type ``?cmds.<function>`` into the REPL to access the documentation for a certai
 
 Set up your QM model of interest!
 
+Use ``plot_levels()`` to get an overview of the energy level structure (Eigenstates) of the full systems and its components. 
+
+Operators can be ordered into excitation sectors (0, 1, 2, ..., N excitations) by
+```julia
+idx = sortperm(real(diag((H).data)))
+H.data = H.data[idx,idx]
+...
+```
+This helps (makes it possible) to easily convert between eigen- and site basis of the subspace, using the transform operator (`transf_op`) from the output of `create_subspace` (see below):
+
+```julia
+op_site = transf_op * op  * transf_op'
+```
+
+If the dimension of the basis is too large ``create_subspace()`` can be used to project all necessary operators into the ground + single excitation subspace (e.g. for linear spectra), or the ground + single + double excitation subspace (for 2D spectra). 
+
 To calculate 2D spectra first initialize the output array
 
 ```julia
