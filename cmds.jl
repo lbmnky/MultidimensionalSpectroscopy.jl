@@ -1,7 +1,7 @@
 module cmds
 
 export create_colormap, zeropad, interpt, make2Dspectra, correlations,
-        view_dm_evo, save_2d, load_2d, plot2d, crop2d, tri, absorptionSpectrum, plot2d_comps,
+        view_dm_evo, save_2d, load_2d, plot2d, crop2d, round2d, tri, absorptionSpectrum, plot2d_comps,
          pretty_show_mat, vib_analysis, create_subspace, rand_normal, plot_levels
 
 using QuantumOptics, FFTW, LinearAlgebra, PyPlot, Colors, DelimitedFiles, Printf, Random, HDF5
@@ -776,6 +776,31 @@ function crop2d(data_struct,w_min;w_max=100,step=1)
 
 end
 
+"""
+    function round2d()
+
+Use to round 2D spectra to smaller size.
+"""
+function round2d(data_struct,digits=2)
+
+    data_struct.ω         = round.(data_struct.ω,digits=6)
+    data_struct.full2d    = round.(data_struct.full2d,digits=digits)
+    data_struct.full2d_r  = round.(data_struct.full2d_r,digits=digits)
+    data_struct.full2d_nr = round.(data_struct.full2d_nr,digits=digits)
+    data_struct.gsb       = round.(data_struct.gsb,digits=digits)
+    data_struct.gsb_r     = round.(data_struct.gsb_r,digits=digits)
+    data_struct.gsb_nr    = round.(data_struct.gsb_nr,digits=digits)
+    data_struct.se        = round.(data_struct.se,digits=digits)
+    data_struct.se_r      = round.(data_struct.se_r,digits=digits)
+    data_struct.se_nr     = round.(data_struct.se_nr,digits=digits)
+    data_struct.esa       = round.(data_struct.esa,digits=digits)
+    data_struct.esa_r     = round.(data_struct.esa_r,digits=digits)
+    data_struct.esa_nr    = round.(data_struct.esa_nr,digits=digits)
+
+    return data_struct
+
+end
+
 ### I am considering R + conj(R) ... seems that 2D spectra turn out distorted
 """
     corr = correlations(tlist, rho0, H, F, μa, μb, pathway, method, debug)
@@ -1153,7 +1178,7 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
 
         #DELETE
         #corr = corr + corr_cc
-        # TODO damping function t
+        #TODO: damping function t
         #D = .4
         #τc = 10
         #gt = (exp.(-t./τc) .+ t./τc .- 1)
@@ -1273,24 +1298,23 @@ function plot2d_comps(data)
 
     fig, ax = subplots(1,4,sharex=true,sharey=true,figsize=(15,3))
 
-    #subplot(141)
     sca(ax[1])
     plot2d(data.ω, data.full2d)
     title("absorptive")
-    #subplot(142)
+
     sca(ax[2])
     plot2d(data.ω, data.gsb)
     title("GSB")
-    #subplot(143)
+
     sca(ax[3])
     plot2d(data.ω, data.se)
     title("SE")
-    #subplot(144)
+
     sca(ax[4])
     plot2d(data.ω, data.esa)
     title("ESA")
+
     tight_layout()
-    return
 end
 
 function pretty_show_mat(data)
@@ -1334,6 +1358,22 @@ function vib_analysis(data)
      title("ESA NR")
 end
 
+"""
+    plot_levels(H,center_x;col,ls)
+
+Plots the energy levels of H at position center_x within an axis. Create a figure() first, 
+to plot the energy levels of different systems, subspaces, monomers, etc. together. E.g.
+
+```julia
+figure(); title("Energy level diagram")
+cmds.plot_levels(H,0)
+cmds.plot_levels(Hcav,-1)
+cmds.plot_levels(Hexc,1)
+cmds.plot_levels(Hmon,2)
+xticks([-1, 0, 1, 2], ["cavity", "full", "matter", "monomer"])
+```
+
+"""
 function plot_levels(H, center_x; col="k", ls="solid")
     # get energies and eigenvectors of full system
     E      = eigvals(dense(H).data)
