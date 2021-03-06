@@ -100,6 +100,14 @@ end
 ```
 Make sure to disable all output plots within ``cmds.make2Dspectra()`` when using __multithreading__, as these might crash the execution.
 
+JLD2 can be used to conveniently store the ``out2d`` structure (does not work with cloud drive, such as pCloud). Remember to ``round2d()`` the data to save disk space.
+
+```julia
+@save "C:\\path\\to\\data\\file.jld2" out2d
+```
+
+However, the data format is not compatible with other software. ``cmds.save2d()`` saves ASCII files for real (.re) and imaginary (.im) parts.
+
 <a name="examplesTOC"></a>
 ## Examples
 
