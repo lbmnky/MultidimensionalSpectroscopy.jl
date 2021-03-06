@@ -106,6 +106,12 @@ JLD2 can be used to conveniently store the ``out2d`` structure (does not work wi
 @save "C:\\path\\to\\data\\file.jld2" out2d
 ```
 
+It can be load as 
+
+```julia
+@load "C:\\path\\to\\data\\file.jld2" out2d
+```
+
 However, the data format is not compatible with other software. ``cmds.save2d()`` saves ASCII files for real (.re) and imaginary (.im) parts.
 
 <a name="examplesTOC"></a>
