@@ -22,7 +22,7 @@ Type ``?cmds.<function>`` into the REPL to access the documentation for a certai
 
 ### Available functions:
 
-- __create_colormap__: creates a blue-white-green-red colormap with zero values being white (scheme="bright") or dark (scheme="dark")
+- __create_colormap__: creates a blue-white-green-red colormap with zero values being white (`scheme="bright"`) or dark (`scheme="dark"`)
 
 - __zeropad__: zeropadding of time domain data before Fourier transformation into spectral domain
 
