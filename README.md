@@ -22,7 +22,7 @@ Type ``?cmds.<function>`` into the REPL to access the documentation for a certai
 
 ### Available functions:
 
-- __create_colormap__: creates a blue-white-green-red colormap with zero values being white
+- __create_colormap__: creates a blue-white-green-red colormap with zero values being white (scheme="bright") or dark (scheme="dark")
 
 - __zeropad__: zeropadding of time domain data before Fourier transformation into spectral domain
 
@@ -34,13 +34,25 @@ Type ``?cmds.<function>`` into the REPL to access the documentation for a certai
 
 - __view_dm_evo__: quick way to visualize evolution of density matrix
 
-- __save_2d__: saves 2D plots to 01_Output
+- __save_2d__: saves 2D plots to folder `fn_base`
 
 - __plot2d__: plots 2D data in out2d
+
+- __plot_timeTrace__: plots time traces from T evolution of 2D spectrum
 
 - __crop2d__: crops 2D data to reduce size
 
 - __tri__: select upper or lower triangular matrix, used to simplify pathways
+
+- __create_subspace__: create subspace (ground state -> single excitation sector, ground state -> double excitation sector, ...) Hamiltonian and operators
+
+- __absorptionSpectrum__: shortcut to calculate and plot absorption spectrum
+
+- __plot2d_comps__: plot components (GSB, SE, ESA) of 2D spectrum
+
+- __vib_analysis__: plot rephasing and non-rephasing parts of GSB, SE and ESA 2D spectra -> beating maps
+
+- __plot_levels__: diagonalise Hamiltonian and plot level structure
 
 ### How to use:
 
