@@ -106,13 +106,28 @@ JLD2 can be used to conveniently store the ``out2d`` structure (does not work wi
 @save "C:\\path\\to\\data\\file.jld2" out2d
 ```
 
-It can be load as 
+Data can be load as 
 
 ```julia
 @load "C:\\path\\to\\data\\file.jld2" out2d
 ```
 
 However, the data format is not compatible with other software. ``cmds.save2d()`` saves ASCII files for real (.re) and imaginary (.im) parts.
+
+...
+
+You can create a slider to flip through 2D spectra (work in progress):
+
+```julia
+using Blink, Interactive
+
+mp = @manipulate for i in slider(1:length(out2d))
+          clf();cmds.plot2d(out2d[i].ω,out2d[i].full2d)
+          end
+
+w = Window(); 
+body!(w, mp);
+```
 
 <a name="examplesTOC"></a>
 ## Examples
