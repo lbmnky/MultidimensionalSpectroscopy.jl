@@ -2,9 +2,9 @@ module cmds
 
 export create_colormap, zeropad, interpt, make2Dspectra, correlations,
         view_dm_evo, save_2d, load_2d, plot2d, crop2d, round2d, tri, absorptionSpectrum, plot2d_comps,
-         pretty_show_mat, vib_analysis, create_subspace, rand_normal, plot_levels
+         pretty_show_mat, vib_analysis, create_subspace, rand_normal, plot_levels, logger
 
-using QuantumOptics, FFTW, LinearAlgebra, PyPlot, Colors, DelimitedFiles, Printf, Random, HDF5
+using QuantumOptics, FFTW, LinearAlgebra, PyPlot, Colors, DelimitedFiles, Printf, Random, JLD2, Interact, Blink
 
 """
     plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin")
@@ -25,12 +25,20 @@ norm      : if norm == 0 normalize each 2D spectrum individually, else normalize
 function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", norm=0)
 
     ## select 2D spectrum to plot
-    if repr == "absorptive"
+    if repr in ["absorptive", "abst", "real"]
         data = real(data)
-    elseif repr == "dispersive"
+        cmp = create_colormap()
+    elseif repr in ["dispersive", "disp", "imaginary", "imag", "i"]
         data = imag(data)
-    elseif repr == "absolute"
+        cmp = create_colormap()
+    elseif repr in ["absolute", "absl"]
+        #data = sqrt.(real(data).^2 + imag(data).^2) #BUG doing this calculation results in Inf values when data{ComplexF16}
         data = abs.(data)
+        cmp = create_colormap()
+    elseif repr in ["phase", "ph"]
+        data_cntl = real(data) ./ maximum(abs.(data))
+        data = atan.(imag(data) ./ real(data)) 
+        cmp = "rainbow"
     end
 
     ## normalize 2D spectrum to plot
@@ -49,16 +57,19 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
     elseif scaling == "cube"
         lvls = lvls.^3;
     elseif scaling == "asinh"
-        lvls = asinh.(3*lvls); lvls = lvls ./ maximum(lvls);
+        lvls = asinh.(0.1*lvls); lvls = lvls ./ maximum(lvls);
     end
 
-    ## rescale lvls to data (don't rescale data, takes more time)
-    m = -1*(maximum(abs.(real(data)))); M = (maximum(abs.(real(data))))
-    if m != 0 && M != 0
+
+    # rescale lvls to data (don't rescale data, takes more time)
+    m = -1*(maximum(abs.(data))); M = (maximum(abs.(data)))
+    if m == 0 && M == 0
+        lvls = 0.001 * lvls;
+    elseif m == Inf || M == Inf
+        println("\nERROR: z-value is Inf!\n")
+    else
         lvls = lvls * maximum(abs.([m, M]));
         lvls_ticks = [-1:0.2:1;] * maximum(abs.([m, M]))
-    else
-        lvls = 0.001 * lvls;
     end
 
     # normalize to global maximum with evolution time T scan
@@ -67,15 +78,25 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
         lvls = lvls ./ maximum(lvls) * norm;
     end
 
+    
     ## plot data as filled contour
     conv = "ω3ω1"
     if conv == "ω1ω3"
-        cs = contourf(ω,ω,data,lvls,cmap=create_colormap()); colorbar();
-        cs2 = contour(cs,levels=cs.levels[:],colors="gray",linewidths=(.5,))
+        cs  = contourf(ω,ω,data,lvls,cmap=create_colormap()); colorbar();
+        if repr == "phase"
+            cs2 = contour(ω,ω,data_cntl,lvls,colors="white",linewidths=(.5,))
+        else
+            cs2 = contour(cs,levels=cs.levels[:],colors="gray",linewidths=(.5,))
+        end
         xlabel("detection (ω₃)"); ylabel("excitation (ω₁)"); #clim([m, M]);
+        
     elseif conv == "ω3ω1"
-        cs = contourf(ω,ω,transpose(data),lvls,cmap=create_colormap());
-        cs2 = contour(cs,levels=cs.levels[:],colors="gray",linewidths=(.5,))
+        cs  = contourf(ω,ω,transpose(data),lvls,cmap=cmp);
+        if repr == "phase"
+            cs2 = contour(ω,ω,transpose(data_cntl),lvls,colors="white",linewidths=(.5,))
+        else
+            cs2 = contour(cs,levels=cs.levels[:],colors="gray",linewidths=(.5,))
+        end
         xlabel("excitation (ω₁)"); ylabel("detection (ω₃)");
     end
     cbar = colorbar(cs)
@@ -107,6 +128,10 @@ function plot_timeTrace(dat2d,T,ω,w1,w3)
     xlabel("Time"); ylabel("Intensity at w1;w3")
     legend()
     tight_layout()
+    #sel = slider(1:length(dat2d))
+    #w = Window()
+    #Interact.@on 
+    #body!(w, sel);
 end
 
 """
@@ -346,20 +371,21 @@ Structure that stores the output of "make2Dspectra"
 * 'se'          : complex 2D spectrum with only SE pathways
 * 'esa'         : complex 2D spectrum with only ESA pathways
 """
-mutable struct out2d
+mutable struct out2d{T}
     ω
-    full2d
-    full2d_r
-    full2d_nr
-    gsb
-    gsb_r
-    gsb_nr
-    se
-    se_r
-    se_nr
-    esa
-    esa_r
-    esa_nr
+    full2d::T
+    full2d_r::T
+    full2d_nr::T
+    gsb::T
+    gsb_r::T
+    gsb_nr::T
+    se::T
+    se_r::T
+    se_nr::T
+    esa::T
+    esa_r::T
+    esa_nr::T
+    corr
 end
 
 """
@@ -426,12 +452,12 @@ function create_subspace(H, manifold, F, dat...)
     # size of subspace 
     if manifold == "bi"
         #n_sub = 1 + L + binomial(L,2)
-        n_sub = collect(1:1+L+binomial(L,2))
+        n_sub = collect(1:1+L+binomial(L,2)+1)   #TODO: +1 for 2nd fock state... w/o +1 only true for all TLSs (cavity and matter)
     elseif manifold == "bi_lowest"
         #n_sub = 1 + L + 1                       # just use a single bi-excitonic state as an approximation
         n_sub = collect(1:1+L+1)
     elseif manifold == "bi_polariton"
-        n_sub = append!(collect(1:1+L+1),1+L+binomial(L,2))   # just use bi-excitonic states that are coupled to field ...
+        n_sub = append!(collect(1:1+L+1),1+L+binomial(L,2)+1)   # just use bi-excitonic states that are coupled to field ...
     elseif manifold == "si"
         #n_sub = 1 + L
         n_sub = collect(1:1+L)
@@ -587,7 +613,7 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     #rhots_R_gsb  = rhots_R_gsb  - conj(rhots_R_gsb)
     if test
         corr_func_NR_gsb = corr_func_NR_gsb .* (exp.(-gτ) * exp.(-gt)')
-        corr_func_R_gsb  = corr_func_R_gsb .* (exp.(-gτ) * exp.(-gt)')
+        corr_func_R_gsb  = corr_func_R_gsb  .* (exp.(-gτ) * exp.(-gt)')
     end
 
     # stimulated emission
@@ -599,10 +625,25 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     #rhots_R_se  = rhots_R_se  - conj(rhots_R_se)
     if test
         corr_func_NR_se = corr_func_NR_se .* (exp.(-gτ) * exp.(-gt)')
-        corr_func_R_se  = corr_func_R_se .* (exp.(-gτ) * exp.(-gt)')
+        corr_func_R_se  = corr_func_R_se  .* (exp.(-gτ) * exp.(-gt)')
     end
 
+    use_alt = false # use alternative way of calculating signal
+    if use_alt
+        corr_gsb = hcat(reverse(corr_func_R_gsb,dims=2), corr_func_NR_gsb[:,2:end])
+        corr_se  = hcat(reverse(corr_func_R_se,dims=2),  corr_func_NR_se[:,2:end])
+        corr_esa = hcat(reverse(corr_func_R_esa,dims=2), corr_func_NR_esa[:,2:end])
+        corr_esax = hcat(reverse(corr_func_R_esax,dims=2),corr_func_NR_esax[:,2:end])
 
+        corr = corr_gsb + corr_se - corr_esa - corr_esax
+
+        spec2dd     = corr2spec(corr, zp)
+        spec2dd_gsb = corr2spec(corr_gsb, zp)
+        spec2dd_se  = corr2spec(corr_se, zp)
+        spec2dd_esa = -corr2spec(corr_esa, zp)
+        spec2dd_esax = -corr2spec(corr_esax, zp)
+    end
+    
     # divide first value by .5 (see Hamm and Zanni)
     corr_func_NR_gsb[1,:] = corr_func_NR_gsb[1,:] / 2
     corr_func_NR_gsb[:,1] = corr_func_NR_gsb[:,1] / 2
@@ -623,20 +664,20 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     corr_func_NR_esax[:,1] = corr_func_NR_esax[:,1] / 2
     corr_func_R_esax[1,:]  = corr_func_NR_esax[1,:] / 2
     corr_func_R_esax[:,1]  = corr_func_NR_esax[:,1] / 2
-
+    
     # zeropad data prior to fft to increase resolution
     corr_func_NR_gsb = zeropad(corr_func_NR_gsb,zp)
     corr_func_R_gsb  = zeropad(corr_func_R_gsb ,zp)
-
+    
     corr_func_NR_se  = zeropad(corr_func_NR_se,zp)
     corr_func_R_se   = zeropad(corr_func_R_se ,zp)
 
     corr_func_NR_esa = zeropad(corr_func_NR_esa,zp)
     corr_func_R_esa  = zeropad(corr_func_R_esa ,zp)
-
+    
     corr_func_NR_esax = zeropad(corr_func_NR_esax,zp)
     corr_func_R_esax  = zeropad(corr_func_R_esax ,zp)
-
+    
     #######################################################
     ######### plot 2nd order correlation function #########
     #######################################################
@@ -653,11 +694,11 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     spec2d_NR_se  = fftshift(fft((corr_func_NR_se)))
     spec2d_R_se   = fftshift(fft((corr_func_R_se)))
 
-    spec2d_NR_esa = fftshift(fft((corr_func_NR_esa)))
-    spec2d_R_esa  = fftshift(fft((corr_func_R_esa)))
+    spec2d_NR_esa = -fftshift(fft((corr_func_NR_esa)))
+    spec2d_R_esa  = -fftshift(fft((corr_func_R_esa)))
 
-    spec2d_NR_esax = fftshift(fft((corr_func_NR_esax)))
-    spec2d_R_esax  = fftshift(fft((corr_func_R_esax)))
+    spec2d_NR_esax = -fftshift(fft((corr_func_NR_esax)))
+    spec2d_R_esax  = -fftshift(fft((corr_func_R_esax)))
 
     println("done\n")
 
@@ -665,15 +706,16 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     println("########## Construct absorptive 2D spectrum ###########");
     println("############# ########################### #############\n");
 
-    spec2d_R_gsb = circshift(reverse(spec2d_R_gsb ,dims=2),(0,1))
-    spec2d_R_se  = circshift(reverse(spec2d_R_se  ,dims=2),(0,1))
-    spec2d_R_esa = circshift(reverse(spec2d_R_esa ,dims=2),(0,1))
-    spec2d_R_esax = circshift(reverse(spec2d_R_esax ,dims=2),(0,1))
+    spec2d_R_gsb  = circshift(reverse(spec2d_R_gsb ,dims=1),(1,0))
+    spec2d_R_se   = circshift(reverse(spec2d_R_se  ,dims=1),(1,0))
+    spec2d_R_esa  = circshift(reverse(spec2d_R_esa ,dims=1),(1,0))
+    spec2d_R_esax = circshift(reverse(spec2d_R_esax ,dims=1),(1,0))
+
 
     # calculate the absorptive spectrum of GSB, ESA, and SE
-    spec2d_gsb = spec2d_NR_gsb + spec2d_R_gsb
-    spec2d_se  = spec2d_NR_se  + spec2d_R_se
-    spec2d_esa = spec2d_NR_esa + spec2d_R_esa
+    spec2d_gsb  = spec2d_NR_gsb  + spec2d_R_gsb
+    spec2d_se   = spec2d_NR_se   + spec2d_R_se
+    spec2d_esa  = spec2d_NR_esa  + spec2d_R_esa
     spec2d_esax = spec2d_NR_esax + spec2d_R_esax
 
     # sum rephasing and non-rephasing spectra individually
@@ -687,65 +729,35 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
                 spec2d_NR_esa #+
 #                spec2d_NR_esax;
 
+    # Subtract esax from gsb. Additional channel to simulate ground state recovery
+    spec2d_gsb = spec2d_gsb + spec2d_esax
+
     # calculate the total 2D spectrum (complex)
     spec2d = spec2d_gsb +
              spec2d_se  +
-             spec2d_esa +
-             spec2d_esax;
+             spec2d_esa
 
     println("done\n")
 
-    # cut spec2d
+
+    #BUG #TODO: So far I need to change tlist and then crop ω when using alternative way of calculating 2D signals
+    #tlist = [tlist; tlist[2:end] .+ tlist[end]]
     tlist, ω = interpt(tlist,zp)
+    #ω = ω[end÷2+1:end]
 
-    out = out2d(ω, spec2d, spec2d_r, spec2d_nr, spec2d_gsb, spec2d_R_gsb,
-                spec2d_NR_gsb, spec2d_se, spec2d_R_se, spec2d_NR_se, spec2d_esa,
-                spec2d_R_esa, spec2d_NR_esa)
+    # could return corr for looking at it ... set [] to save space
+    corr = []
 
-    if debug == true
-        #=
-        figure(figsize=(8,6))
-        subplot(431); pcolormesh(real(rhots_R_gsb)); title("GSB"); ylabel("Rephasing")
-        subplot(434); pcolormesh(real(rhots_NR_gsb)); ylabel("Non-rephasing")
-        subplot(437); pcolormesh(spec2d_R_gsb); ylabel("Rephasing")
-        subplot(4,3,10); pcolormesh(spec2d_NR_gsb); ylabel("Non-rephasing")
+    #FACT: spec2dd behaves correctly (for coupled dimer) when plotting absorptive, absolute, dispersive and phase // spec2d now as well ! ... 
+    #TODO: absl is stretched too much in ω3!
+    out = out2d{Array{ComplexF16,2}}(ω, spec2d, spec2d_r, spec2d_nr, spec2d_gsb, spec2d_R_gsb,
+                                     spec2d_NR_gsb, spec2d_se, spec2d_R_se, spec2d_NR_se, spec2d_esa,
+                                     spec2d_R_esa, spec2d_NR_esa, corr)
 
-        subplot(432); pcolormesh(real(rhots_R_se)); title("SE")
-        subplot(435); pcolormesh(real(rhots_NR_se));
-        subplot(438); pcolormesh(spec2d_R_se);
-        subplot(4,3,11); pcolormesh(spec2d_NR_se);
+    out = crop2d(out,1;w_max=10,step=1) 
+    out = round2d(out,2)
 
-        subplot(433); pcolormesh(real(rhots_R_esa)); title("ESA")
-        subplot(436); pcolormesh(real(rhots_NR_esa));
-        subplot(439); pcolormesh(spec2d_R_esa);
-        subplot(4,3,12); pcolormesh(spec2d_NR_esa);
-        tight_layout()
-        =#
-        """
-        figure(figsize=(10,6))
-        L = size(spec2d,1);
-        subplot(221); pcolormesh(real(spec2d_gsb)); title("GSB abs."); colorbar()
-        clim([-100, 100])
-        plot([1:L;],[1:L;])
-        subplot(222); pcolormesh(real(spec2d_se)); title("SE abs."); colorbar()
-        clim([-100, 100])
-        plot([1:L;],[1:L;])
-        subplot(223); pcolormesh(real(spec2d_esa)); title("ESA abs."); colorbar()
-        clim([-100, 100])
-        tight_layout()
-        plot([1:L;],[1:L;])
-        subplot(224); pcolormesh(real(spec2d_esax)); title("ESAx abs."); colorbar()
-        clim([-100, 100])
-        tight_layout()
-        plot([1:L;],[1:L;])
-        """
-        return out
-
-    else
-
-        return out #crop2d(out,0)
-
-    end
+    return out
 end
 
 """
@@ -801,9 +813,9 @@ function round2d(data_struct,digits=2)
 
 end
 
-### I am considering R + conj(R) ... seems that 2D spectra turn out distorted
+#CHECK I am considering R + conj(R) ... seems that 2D spectra turn out distorted
 """
-    corr = correlations(tlist, rho0, H, F, μa, μb, pathway, method, debug)
+    corr = correlations(tlist, rho0, H, F, μa, μb, pathway, method, debug; t2)
 
 Calculate the response functions necessary for 2D spectroscopy.
 
@@ -822,6 +834,7 @@ Calculate the response functions necessary for 2D spectroscopy.
 * 'method'  : select either Lindblad or Redfield master equation solver
 * 'debug'   : if true, plot response functions and spectra of GSB, SE and ESA and
               show intermediate density matrices
+* 't2'      : behaviour during t2 time "kin", "vib" or "full"
 
 # Output
 * 'corr'    : 2D correlation function
@@ -833,29 +846,31 @@ Calculate the response functions necessary for 2D spectroscopy.
 * FS        : final state
 * μa and μb : TDMs, coupling states, such that GS <-μa-> ESs <-μb-> FS
 * F         : is either list of collapse operators (c_ops; Lindblad) or
-              of relaxation tensor (R, Redfield)
+              a relaxation tensor (R; Redfield)
 
----
 
+# Pathways calculated (w/o cc)
 rephasing:
-
-GSB               {μ * [(rho0 * μ) * μ]}  
-            copy: (μ * ((rho0 * μ) * μ))  
-SE                {[μ * (rho0 * μ)] * μ} + cc  
-            copy: ((μ * (rho0 * μ)) * μ)  
-ESA               {μ * [μ * (rho0 * μ)]} + cc  
-            copy: (μ * (μ * (rho0 * μ)))  
+```
+GSB               { μ * [(rho0 * μ)  * μ]}  + cc
+            copy: ( μ * ((rho0 * μ)  * μ))  
+SE                {[μ *  (rho0 * μ)] * μ}   + cc  
+            copy: ((μ *  (rho0 * μ)) * μ)  
+ESA               { μ *  [μ * (rho0  * μ)]} + cc  
+            copy: ( μ *  (μ * (rho0  * μ)))  
+```
 
 non-rephasing:  
-
-GSB               {μ * [μ * (μ * rho0)]}  
+```
+GSB               {μ * [μ * (μ * rho0)]} + cc 
             copy: (μ * (μ * (μ * rho0)))  
 SE                {[(μ * rho0) * μ] * μ} + cc  
             copy: (((μ * rho0) * μ) * μ)  
 ESA               {μ * [(μ * rho0) * μ]} + cc  
             copy: (μ * ((μ * rho0) * μ))  
+```
 """
-function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2coh=false)
+function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug; t2coh=false)
 
     #=
     #IDEA either create subspace in function that generates Hamiltonian, or create in t_ev
@@ -874,10 +889,10 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
 
 
     ## use full transition dipole operator matrix
-    μ = μa + μb
+    #μ = μa + μb #DELETE
     ## or not ...
-    μ_ge = μa
-    μ_ef = μb
+    #μ_ge = μa
+    #μ_ef = μb
 
     #TODO!: T-dependent H not working with Redfield
     if length(H) == 1
@@ -908,8 +923,8 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
     T = [0.:1.:T;]     
 
     # initialize output matrix
-    corr    = zeros(length(tlist),length(tlist))
-    corr_cc = zeros(length(tlist),length(tlist))
+    corr    = complex(zeros(length(tlist),length(tlist)))
+    corr_cc = complex(zeros(length(tlist),length(tlist)))
 
     # use right-hand excitation for rephasing and left-hand excitation for
     # non-rephasing to ensure that emission is from the left of the double-
@@ -931,14 +946,14 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
     # define transition dipole operator to evaluate expectation value
     if pathway[end] == 'a' # if esa pathway use μb
         #μexp = -μb         # minus sign follows from Feynman diagrams
-        μexp    = -tri(μ_ef,"U")
+        μexp    = tri(μ_ef,"U") # ... removed -1
         #μexp_cc = -μ_ef
     elseif pathway[end] == 'e'
         μexp    = tri(μ_ge,"U")
         #μexp_cc = tri(μ_ge,"L")
     elseif pathway[end] == 'x'
         μ_ef    =  μ_ge
-        μexp    = -μ_ge
+        μexp    =  μ_ge
         #μexp_cc = -μ_ge
         pathway = chop(pathway)
     else
@@ -958,14 +973,14 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
     print(repeat("\b", R))
 
     # TODO: damping function τ, implement somehow in redfield ??
-    #D = .4
+    """
     τc = 8
     tc = 20
     gτ = (exp.(-τ./τc) .+ τ./τc .- 1)
     gt = (exp.(-τ./tc) .+ τ./tc .- 1)
-
-    #rho1_τ = rho1_τ .* exp.(-gτ)
-    #rho1_τ_cc = rho1_τ_cc .* exp.(-gt)
+    rho1_τ = rho1_τ .* exp.(-gτ)
+    rho1_τ_cc = rho1_τ_cc .* exp.(-gt)
+    """
 
     # now, use every rho(τ) as starting point to calculate second coherence
     # time (t) dependence. Note that first interaction with μ puts density
@@ -978,19 +993,20 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
             # {μ * [(rho0 * μ) * μ]}
             # copy: (μ * ((rho0 * μ) * μ))
             #------------------------#
-            # second field interaction A(τ)
             #rho2    =   rho1_τ[i]     * μ_ge
             rho2    =   rho1_τ[i]    * tri(μ_ge,"L")
             #rho2_cc =   μ_ge         * rho1_τ_cc[i]
     #         rho2_cc =   tri(μ_ge,"U")* rho1_τ_cc[i]
             rho2a = rho2
             # eliminate on-diagonal or off-diagonal elements
-            if t2coh == false
+            if t2coh == "kin"
                 rho2.data = tril(triu(rho2.data))
     #            rho2_cc.data = tril(triu(rho2_cc.data))
-            else
+            elseif t2coh == "vib"
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
     #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
+            elseif t2coh == "full"
+                #
             end
             rho2b = rho2
             # time evolution during t2(T)-time
@@ -1016,12 +1032,14 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
             #rho2_cc = rho1_τ_cc[i] * μ_ge
     #        rho2_cc = rho1_τ_cc[i] * tri(μ_ge,"L")
 
-            if t2coh == false
+            if t2coh == "kin"
                 rho2.data = tril(triu(rho2.data))
     #            rho2_cc.data = tril(triu(rho2_cc.data))
-            else
+            elseif t2coh == "vib"
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
     #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
+            elseif t2coh == "full"
+                #
             end
 
             if T[end] != 0
@@ -1046,12 +1064,14 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
             #rho2_cc = rho1_τ_cc[i] * μ_ge
     #        rho2_cc = rho1_τ_cc[i] * tri(μ_ge,"U")
 
-            if t2coh == false
+            if t2coh == "kin"
                 rho2.data = tril(triu(rho2.data))
     #            rho2_cc.data = tril(triu(rho2_cc.data))
-            else
+            elseif t2coh == "vib"
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
     #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
+            elseif t2coh == "full"
+                #
             end
 
             if T[end] != 0
@@ -1060,8 +1080,6 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
     #            tout, rho2_T_cc = t_ev(T,rho2_cc,H,F)
     #            rho2_cc = rho2_T_cc[end]
             end
-
-            #rho2.data[1,1] = 0
 
             #rho3   =       rho2 * μ_ge
             rho3   =       rho2 * tri(μ_ge,"L")
@@ -1078,12 +1096,14 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
             #rho2_cc = μ_ge * rho1_τ_cc[i]
     #        rho2_cc = tri(μ_ge,"L") * rho1_τ_cc[i]
 
-            if t2coh == false
+            if t2coh == "kin"
                 rho2.data = tril(triu(rho2.data))
     #            rho2_cc.data = tril(triu(rho2_cc.data))
-            else
+            elseif t2coh == "vib"
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
     #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
+            elseif t2coh == "full"
+                #
             end
 
             if T[end] != 0
@@ -1111,12 +1131,13 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
             #rho2_cc = rho1_τ_cc[i]  * μ_ge
     #        rho2_cc = rho1_τ_cc[i]  * tri(μ_ge,"U")
 
-            if t2coh == false
+            if t2coh == "kin"
                 rho2.data = tril(triu(rho2.data))
     #            rho2_cc.data = tril(triu(rho2_cc.data))
-            else
+            elseif t2coh == "vib"
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
     #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
+            elseif t2coh == "full"
             end
 
             if T[end] != 0
@@ -1145,12 +1166,13 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
     #        rho2_cc = tri(μ_ge,"L") * rho1_τ_cc[i]
             #rho2_cc = rho1_τ_cc[i] * μ_ge
 
-            if t2coh == false
+            if t2coh == "kin"
                 rho2.data = tril(triu(rho2.data))
     #            rho2_cc.data = tril(triu(rho2_cc.data))
-            else
+            elseif t2coh == "vib"
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
     #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
+            elseif t2coh == "full"
             end
 
             if T[end] != 0
@@ -1173,7 +1195,7 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
     #    t = tlist; tout, rho3_t_cc  = t_ev(t,rho3_cc,H,F)
 
         # calc. exp. v. for GSB and SE (μexp = μ12) and for ESA (μexp = μ23)
-        corr[i,:]    = real(expect(μexp,conj(rho3_t))) # .* exp.(-gt) #TODO: lineshape f
+        corr[i,:]    = (expect(μexp,conj(rho3_t))) # .* exp.(-gt) #TODO: lineshape f
     #    corr_cc[i,:] = real(expect(μexp_cc,conj(rho3_t_cc)))
 
         #DELETE
@@ -1189,6 +1211,7 @@ function correlations(tlist, rho0, H, F, μa, μb, T, pathway, method, debug; t2
         #    corr_cc[i, j] = tr(real(rhot_temp_cc[j].data * μexp.data))
         #end
 
+        # progress bar update
         if mod(i,20) == 0
             print("=")
         end
@@ -1248,26 +1271,9 @@ end
 """
     ω, corr, spec
 
-function to calculate absorption spectrum.
+Quick function to calculate absorption spectrum.
 """
 function absorptionSpectrum(t, rho, H, F, μ; zp=11)
-
-    """
-    Eivecs = eigvecs(dense(H).data)
-    L = length(H.basis_l.bases)
-    n_sub = 1 + L # + binomial(L,2)
-    Eivecs_sub = [Ket(H.basis_l,Eivecs[:,i]) for i in 1:n_sub]
-    b_sub = SubspaceBasis(H.basis_l,Eivecs_sub)
-
-    P = sparse(projector(b_sub, (H.basis_l)))
-    Pt = dagger(P)
-
-    println("dim(subspace): ", length(b_sub))
-    H    = P * H * Pt
-    μ    = P * μ * Pt
-    rho  = P * rho * Pt
-    F    = [P * F[i] * Pt for i in 1:length(F)]
-    """
 
     corr = timecorrelations.correlation(t, rho, H, F, μ, μ)
     corr_intp = zeropad(corr,zp)
@@ -1276,7 +1282,7 @@ function absorptionSpectrum(t, rho, H, F, μ; zp=11)
     return ω, corr, spec
 end
 
-#FACT: is required for properly making ... σ⁺ ρ ... (tf does this mean?) 
+#FACT: tri is required for properly making ... σ⁺ ρ ... (tf does this mean?) 
 #FACT: deactivate tri for displaced harmonic oscillator
 """
     out = tri(dat, uplo)
@@ -1294,29 +1300,39 @@ function tri(dat,uplo)
     return out;
 end
 
+"""
+    plot2d_comps(data)
+
+Plots GSB, SE and ESA component of 2D spectrum.
+
+#Arguments
+* data  : data struct for single time step T (e.g. out2d[1])
+
+"""
 function plot2d_comps(data)
 
     fig, ax = subplots(1,4,sharex=true,sharey=true,figsize=(15,3))
 
     sca(ax[1])
     plot2d(data.ω, data.full2d)
-    title("absorptive")
+    PyPlot.title("absorptive")
 
     sca(ax[2])
     plot2d(data.ω, data.gsb)
-    title("GSB")
+    PyPlot.title("GSB")
 
     sca(ax[3])
     plot2d(data.ω, data.se)
-    title("SE")
+    PyPlot.title("SE")
 
     sca(ax[4])
     plot2d(data.ω, data.esa)
-    title("ESA")
+    PyPlot.title("ESA")
 
     tight_layout()
 end
 
+#TODO: is this useful ? 
 function pretty_show_mat(data)
     fig, ax = plt.subplots()
     im = ax.imshow(data)
@@ -1356,6 +1372,7 @@ function vib_analysis(data)
      sca(ax[3,2])
      plot2d(data.ω,abs.(data.esa_nr))
      title("ESA NR")
+     tight_layout()
 end
 
 """
@@ -1395,4 +1412,44 @@ function plot_levels(H, center_x; col="k", ls="solid")
 
 end
 
-end # module
+function logger(what, fn)
+    open(fn,"a") do io
+        # do stuff with the open file
+        println(io,what)
+    end
+end
+
+function logger(what,dat, fn)
+    open(fn,"a") do io
+        # do stuff with the open file
+        println(io,what,dat)
+    end
+end
+
+"""
+    corr2spec(corr, zp)
+
+Auxiliary function to convert correlation map to 2D spectrum.
+"""
+function corr2spec(corr, zp)
+        corr = vcat(corr[end:-1:1,end:-1:1],corr[2:end,:])
+        corr = vcat(zeros(size(corr,2))',corr)
+        corr = hcat(corr,zeros(size(corr,1)))
+
+        N = 2^zp
+        temp = complex(zeros(N,N));
+
+        temp[(N-size(corr,1))÷2+1:end-(N-size(corr,1))÷2,(N-size(corr,1))÷2+1:end-(N-size(corr,1))÷2] = corr
+        corr = temp
+
+        corr = circshift(corr,(0,1))
+
+        spec = fft(fftshift(corr))
+        spec = fftshift(spec)
+        spec = spec[1:end÷2,1:end÷2]
+        spec = reverse(spec,dims=1)
+        spec = reverse(spec,dims=2)
+        return spec
+    end
+
+end # module end
