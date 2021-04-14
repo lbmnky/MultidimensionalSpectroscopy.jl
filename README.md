@@ -294,7 +294,7 @@ In order to go beyond the Jaynes-Cummings model ...
 ### Disentangling GSB, SE and ESA contributions
 [back to TOC](#examplesTOC)
 
-CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.se) and ESA (out2d.esa) components:
+CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.se) and ESA (out2d.esa) components. These can be conveniently visualized using ``cmds.plot2d_comps(out2d[1])``:
 
 <!--![GSB](/example_images/coupledDimer_GSB.png)-->
 
