@@ -153,6 +153,7 @@ The following examples [(scripts)](/examples) are available:
     - [Disentangling GSB, SE and ESA contributions](#disentangling-gsb-se-and-esa-contributions)
     - [Disentangling rephasing and non-rephasing signals](#disentangling-rephasing-and-non-rephasing-signals)
     - [Convolution with laser spectrum](#convolution-with-laser-spectrum)
+    - [2D spectrum of J-aggregates](#2d-spectrum-of-j-aggregates)
     - [Coupled dimer inside a cavity](#coupled-dimer-inside-a-cavity)
     - [Tavis-Cummings with ensemble of TLSs](#tavis-cummings-with-ensemble-of-tlss)
       - [No disorder of TLSs energies](#no-disorder-of-tlss-energies)
@@ -321,6 +322,11 @@ In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d
 
 <a name="laserConvolution"></a>
 ### Convolution with laser spectrum
+[back to TOC](#examplesTOC)
+
+
+<a name="Jaggregate"></a>
+### 2D spectrum of J-aggregates
 [back to TOC](#examplesTOC)
 
 <a name="coupledDimerCavity"></a>
