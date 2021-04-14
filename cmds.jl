@@ -48,8 +48,10 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
 
     ## make levels for contourplot with different scaling
     lvls = [-1.025:0.05:1.025;]
-    lvls = [-1,-.9,-.8,-.7,-.6,-.5,-.4,-.3,-.2,-.1,-.08,-.06,-.04,-.02,-.01,-0.001, 0,
-                .001,.01,.02,.04,.06,.08,.1,.2,.3,.4,.5,.6,.7,.8,.9,1];
+    #lvls = [-1,-.9,-.8,-.7,-.6,-.5,-.4,-.3,-.2,-.1,-.08,-.06,-.04,-.02,-.01,-0.001, 0,
+    #            .001,.01,.02,.04,.06,.08,.1,.2,.3,.4,.5,.6,.7,.8,.9,1];
+    lvls = [-1,-.9,-.8,-.7,-.6,-.5,-.4,-.3,-.2,-.1,-.075,-.05, 0,
+                .05,.075,.1,.2,.3,.4,.5,.6,.7,.8,.9,1];
     if scaling == "lin"
         #
     elseif scaling == "tan"
@@ -452,7 +454,7 @@ function create_subspace(H, manifold, F, dat...)
     # size of subspace 
     if manifold == "bi"
         #n_sub = 1 + L + binomial(L,2)
-        n_sub = collect(1:1+L+binomial(L,2)+1)   #TODO: +1 for 2nd fock state... w/o +1 only true for all TLSs (cavity and matter)
+        n_sub = collect(1:1+L+binomial(L,2)+4)   #TODO: +1 for 2nd fock state... w/o +1 only true for all TLSs (cavity and matter)
     elseif manifold == "bi_lowest"
         #n_sub = 1 + L + 1                       # just use a single bi-excitonic state as an approximation
         n_sub = collect(1:1+L+1)
@@ -509,8 +511,10 @@ functions by evaluating the Lindblad master equation.
             after fft, whenever timeevolution has already decayed to 0. Remember
             to also scale tlist and ω via function "interpt.jl". Default zp=0,
             data is not zeropadded.
+
+Hidden is a lineshape function (work in progress).
 """
-function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, use_sub=true, zp=0, t2coh=false)
+function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, use_sub=true, zp=0, t2coh="kin")
 
     if use_sub 
     H_si    = [[pop!(H)]]
@@ -565,15 +569,19 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     #    H_bi, μ12_bi, μ23_bi, rho0_bi, F_bi = H, μ12, μ23, rho0, F
     end
 
-    # TODO can use a 2D lineshape function to cause inhomogeneous broadening, but need to decrease rate
+    # TODO: can use a 2D lineshape function to cause inhomogeneous broadening, but need to decrease rate
     # of Lindblad operators beforehand ... very narrow transition, then broadened by lineshape function
     # inhomogeneously
-    D = .1
-    τc = 35
-    tc = 35
-    gτ = D^2 * τc^2 * (exp.(-tlist./τc) .+ tlist./τc .- 1)
-    gt = D^2 * tc^2 * (exp.(-tlist./tc) .+ tlist./tc .- 1)
-    test = false
+    D = .0001
+    τc = 20
+    tc = 20 #+ T
+    #τc = D / 0.000125
+    #tc = D / 0.000125
+    #gτ = D^2 * τc^2 * (exp.(-tlist./τc) .+ tlist./τc .- 1)
+    gτ_(τ) = D^2 * τc^2 * (exp.(-τ./τc) .+ τ./τc .- 1)
+    #gt = D^2 * tc^2 * (exp.(-tlist./tc) .+ tlist./tc .- 1)
+    gt_(t) = D^2 * tc^2 * (exp.(-t./tc) .+ t./tc .- 1)
+    test = true
 
     # excited state absorption
     corr_func_NR_esa = sum(correlations(tlist,rho0_bi,H_bi[i],F_bi,μ12_bi,μ23_bi,T,
@@ -583,8 +591,8 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     #rhots_NR_esa = rhots_NR_esa - conj(rhots_NR_esa)
     #rhots_R_esa  = rhots_R_esa  - conj(rhots_R_esa)
     if test
-        corr_func_NR_esa = corr_func_NR_esa .* (exp.(-gτ) * exp.(-gt)')
-        corr_func_R_esa  = corr_func_R_esa  .* (exp.(-gτ) * exp.(-gt)')
+        corr_func_NR_esa = corr_func_NR_esa .* (exp.(-gτ_(-tlist)) * exp.(-gt_(-tlist))')
+        corr_func_R_esa  = corr_func_R_esa  .* (exp.(-gτ_( tlist)) * exp.(-gt_( tlist))')
     end
 
     # excited state absorption ... from GS #TODO!: Can't use new Ham(T) here, needs to be same as for GSB
@@ -593,8 +601,8 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     corr_func_R_esax  = sum(correlations(tlist,rho0_bi,H_bi[i],F_bi,μ12_bi,μ23_bi,T,
                                 "R_esax", method,false; t2coh=t2coh) for i in 1:N) ./ N
     if test
-        corr_func_NR_esax = corr_func_NR_esax .* (exp.(-gτ) * exp.(-gt)')
-        corr_func_R_esax  = corr_func_R_esax  .* (exp.(-gτ) * exp.(-gt)')
+        corr_func_NR_esax = corr_func_NR_esax .* (exp.(-gτ_(-tlist)) * exp.(-gt_(-tlist))')
+        corr_func_R_esax  = corr_func_R_esax  .* (exp.(-gτ_( tlist)) * exp.(-gt_( tlist))')
     end
 
     # keep this around for now
@@ -612,8 +620,8 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     #rhots_NR_gsb = rhots_NR_gsb - conj(rhots_NR_gsb)
     #rhots_R_gsb  = rhots_R_gsb  - conj(rhots_R_gsb)
     if test
-        corr_func_NR_gsb = corr_func_NR_gsb .* (exp.(-gτ) * exp.(-gt)')
-        corr_func_R_gsb  = corr_func_R_gsb  .* (exp.(-gτ) * exp.(-gt)')
+        corr_func_NR_gsb = corr_func_NR_gsb .* (exp.(-gτ_(-tlist)) * exp.(-gt_(-tlist))')
+        corr_func_R_gsb  = corr_func_R_gsb  .* (exp.(-gτ_( tlist)) * exp.(-gt_( tlist))')
     end
 
     # stimulated emission
@@ -624,8 +632,8 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     #rhots_NR_se = rhots_NR_se - conj(rhots_NR_se)
     #rhots_R_se  = rhots_R_se  - conj(rhots_R_se)
     if test
-        corr_func_NR_se = corr_func_NR_se .* (exp.(-gτ) * exp.(-gt)')
-        corr_func_R_se  = corr_func_R_se  .* (exp.(-gτ) * exp.(-gt)')
+        corr_func_NR_se = corr_func_NR_se .* (exp.(-gτ_(-tlist)) * exp.(-gt_(-tlist))')
+        corr_func_R_se  = corr_func_R_se  .* (exp.(-gτ_( tlist)) * exp.(-gt_( tlist))')
     end
 
     use_alt = false # use alternative way of calculating signal
@@ -750,7 +758,7 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
 
     #FACT: spec2dd behaves correctly (for coupled dimer) when plotting absorptive, absolute, dispersive and phase // spec2d now as well ! ... 
     #TODO: absl is stretched too much in ω3!
-    out = out2d{Array{ComplexF16,2}}(ω, spec2d, spec2d_r, spec2d_nr, spec2d_gsb, spec2d_R_gsb,
+    out = out2d{Array{ComplexF32,2}}(ω, spec2d, spec2d_r, spec2d_nr, spec2d_gsb, spec2d_R_gsb,
                                      spec2d_NR_gsb, spec2d_se, spec2d_R_se, spec2d_NR_se, spec2d_esa,
                                      spec2d_R_esa, spec2d_NR_esa, corr)
 
@@ -966,6 +974,7 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
     #τ = tlist; tout, rho1_τ_cc = t_ev(τ,rho1_cc,H,F)
 
     # add progress bar #TODO: make compatible with multiple Threads
+    
     R = length(collect(1:20:length(rho1_τ)))
     Tpr = T[end]
     print(Threads.threadid())
