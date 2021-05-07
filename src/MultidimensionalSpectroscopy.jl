@@ -1,8 +1,8 @@
-module cmds
+module MultidimensionalSpectroscopy
 
 export create_colormap, zeropad, interpt, make2Dspectra, correlations,
         view_dm_evo, save_2d, load_2d, plot2d, crop2d, round2d, tri, absorptionSpectrum, plot2d_comps,
-         pretty_show_mat, vib_analysis, create_subspace, rand_normal, plot_levels, logger
+         pretty_show_mat, vib_analysis, create_subspace, rand_normal, plot_levels, logger, out2d
 
 using QuantumOptics, FFTW, LinearAlgebra, PyPlot, Colors, DelimitedFiles, Printf, Random, JLD2, Interact, Blink
 
@@ -46,12 +46,22 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
         data = data/maximum(abs.(data));
     end
 
+    sensitivity = "++"
+
     ## make levels for contourplot with different scaling
     lvls = [-1.025:0.05:1.025;]
-    #lvls = [-1,-.9,-.8,-.7,-.6,-.5,-.4,-.3,-.2,-.1,-.08,-.06,-.04,-.02,-.01,-0.001, 0,
-    #            .001,.01,.02,.04,.06,.08,.1,.2,.3,.4,.5,.6,.7,.8,.9,1];
-    lvls = [-1,-.9,-.8,-.7,-.6,-.5,-.4,-.3,-.2,-.1,-.075,-.05, 0,
+    if sensitivity == "+++"
+        lvls = [-1,-.9,-.8,-.7,-.6,-.5,-.4,-.3,-.2,-.1,-.08,-.06,-.04,-.02,-.01,-0.001, 0,
+                .001,.01,.02,.04,.06,.08,.1,.2,.3,.4,.5,.6,.7,.8,.9,1];
+    elseif sensitivity == "++"
+         lvls = [-1,-.9,-.8,-.7,-.6,-.5,-.4,-.3,-.2,-.1,-.08,-.06,-.04,-.02, 0,
+                .02,.04,.06,.08,.1,.2,.3,.4,.5,.6,.7,.8,.9,1];
+    elseif sensitivity == "+"
+        lvls = [-1,-.9,-.8,-.7,-.6,-.5,-.4,-.3,-.2,-.1,-.075,-.05, 0,
                 .05,.075,.1,.2,.3,.4,.5,.6,.7,.8,.9,1];
+    else
+    end
+
     if scaling == "lin"
         #
     elseif scaling == "tan"
@@ -428,7 +438,7 @@ function create_subspace(H, manifold, dat...)
     if manifold == "bi"
         n_sub = 1 + L + binomial(L,2)
     elseif manifold == "si"
-        n_sub = 1 + L
+        n_sub = 1 + L + 1
     end
 
     # eigenvectors of subspace
@@ -636,8 +646,10 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
         corr_func_R_se  = corr_func_R_se  .* (exp.(-gτ_( tlist)) * exp.(-gt_( tlist))')
     end
 
-    use_alt = false # use alternative way of calculating signal
+    use_alt = true # use alternative way of calculating signal
+
     if use_alt
+    
         corr_gsb = hcat(reverse(corr_func_R_gsb,dims=2), corr_func_NR_gsb[:,2:end])
         corr_se  = hcat(reverse(corr_func_R_se,dims=2),  corr_func_NR_se[:,2:end])
         corr_esa = hcat(reverse(corr_func_R_esa,dims=2), corr_func_NR_esa[:,2:end])
@@ -650,75 +662,86 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
         spec2dd_se  = corr2spec(corr_se, zp)
         spec2dd_esa = -corr2spec(corr_esa, zp)
         spec2dd_esax = -corr2spec(corr_esax, zp)
+
+        #spec2d_NR_gsb = []
+        #spec2d_R_gsb  = []
+        #spec2d_NR_se  = []
+        #spec2d_R_se   = []
+        #spec2d_NR_esa = []
+        #spec2d_R_esa  = []
+        #spec2d_NR_esax = []
+        #spec2d_R_esax  = []
+
     end
     
-    # divide first value by .5 (see Hamm and Zanni)
-    corr_func_NR_gsb[1,:] = corr_func_NR_gsb[1,:] / 2
-    corr_func_NR_gsb[:,1] = corr_func_NR_gsb[:,1] / 2
-    corr_func_R_gsb[1,:]  = corr_func_NR_gsb[1,:] / 2
-    corr_func_R_gsb[:,1]  = corr_func_NR_gsb[:,1] / 2
+        # divide first value by .5 (see Hamm and Zanni)
+        corr_func_NR_gsb[1,:] = corr_func_NR_gsb[1,:] / 2
+        corr_func_NR_gsb[:,1] = corr_func_NR_gsb[:,1] / 2
+        corr_func_R_gsb[1,:]  = corr_func_NR_gsb[1,:] / 2
+        corr_func_R_gsb[:,1]  = corr_func_NR_gsb[:,1] / 2
 
-    corr_func_NR_se[1,:] = corr_func_NR_se[1,:] / 2
-    corr_func_NR_se[:,1] = corr_func_NR_se[:,1] / 2
-    corr_func_R_se[1,:]  = corr_func_NR_se[1,:] / 2
-    corr_func_R_se[:,1]  = corr_func_NR_se[:,1] / 2
+        corr_func_NR_se[1,:] = corr_func_NR_se[1,:] / 2
+        corr_func_NR_se[:,1] = corr_func_NR_se[:,1] / 2
+        corr_func_R_se[1,:]  = corr_func_NR_se[1,:] / 2
+        corr_func_R_se[:,1]  = corr_func_NR_se[:,1] / 2
 
-    corr_func_NR_esa[1,:] = corr_func_NR_esa[1,:] / 2
-    corr_func_NR_esa[:,1] = corr_func_NR_esa[:,1] / 2
-    corr_func_R_esa[1,:]  = corr_func_NR_esa[1,:] / 2
-    corr_func_R_esa[:,1]  = corr_func_NR_esa[:,1] / 2
+        corr_func_NR_esa[1,:] = corr_func_NR_esa[1,:] / 2
+        corr_func_NR_esa[:,1] = corr_func_NR_esa[:,1] / 2
+        corr_func_R_esa[1,:]  = corr_func_NR_esa[1,:] / 2
+        corr_func_R_esa[:,1]  = corr_func_NR_esa[:,1] / 2
 
-    corr_func_NR_esax[1,:] = corr_func_NR_esax[1,:] / 2
-    corr_func_NR_esax[:,1] = corr_func_NR_esax[:,1] / 2
-    corr_func_R_esax[1,:]  = corr_func_NR_esax[1,:] / 2
-    corr_func_R_esax[:,1]  = corr_func_NR_esax[:,1] / 2
+        corr_func_NR_esax[1,:] = corr_func_NR_esax[1,:] / 2
+        corr_func_NR_esax[:,1] = corr_func_NR_esax[:,1] / 2
+        corr_func_R_esax[1,:]  = corr_func_NR_esax[1,:] / 2
+        corr_func_R_esax[:,1]  = corr_func_NR_esax[:,1] / 2
+        
+        # zeropad data prior to fft to increase resolution
+        corr_func_NR_gsb = zeropad(corr_func_NR_gsb,zp)
+        corr_func_R_gsb  = zeropad(corr_func_R_gsb ,zp)
+        
+        corr_func_NR_se  = zeropad(corr_func_NR_se,zp)
+        corr_func_R_se   = zeropad(corr_func_R_se ,zp)
+
+        corr_func_NR_esa = zeropad(corr_func_NR_esa,zp)
+        corr_func_R_esa  = zeropad(corr_func_R_esa ,zp)
+        
+        corr_func_NR_esax = zeropad(corr_func_NR_esax,zp)
+        corr_func_R_esax  = zeropad(corr_func_R_esax ,zp)
+        
+        #######################################################
+        ######### plot 2nd order correlation function #########
+        #######################################################
+
+        println("done\n")
+
+        println("############# ########################### #############");
+        println("############ Fourier transform of pathways ############");
+        println("############# ########################### #############\n");
+
+        spec2d_NR_gsb = fftshift(fft((corr_func_NR_gsb)))
+        spec2d_R_gsb  = fftshift(fft((corr_func_R_gsb)))
+
+        spec2d_NR_se  = fftshift(fft((corr_func_NR_se)))
+        spec2d_R_se   = fftshift(fft((corr_func_R_se)))
+
+        spec2d_NR_esa = -fftshift(fft((corr_func_NR_esa)))
+        spec2d_R_esa  = -fftshift(fft((corr_func_R_esa)))
+
+        spec2d_NR_esax = -fftshift(fft((corr_func_NR_esax)))
+        spec2d_R_esax  = -fftshift(fft((corr_func_R_esax)))
+
+        println("done\n")
+
+        println("############# ########################### #############");
+        println("########## Construct absorptive 2D spectrum ###########");
+        println("############# ########################### #############\n");
+
+        spec2d_R_gsb  = circshift(reverse(spec2d_R_gsb ,dims=1),(1,0))
+        spec2d_R_se   = circshift(reverse(spec2d_R_se  ,dims=1),(1,0))
+        spec2d_R_esa  = circshift(reverse(spec2d_R_esa ,dims=1),(1,0))
+        spec2d_R_esax = circshift(reverse(spec2d_R_esax ,dims=1),(1,0))
+
     
-    # zeropad data prior to fft to increase resolution
-    corr_func_NR_gsb = zeropad(corr_func_NR_gsb,zp)
-    corr_func_R_gsb  = zeropad(corr_func_R_gsb ,zp)
-    
-    corr_func_NR_se  = zeropad(corr_func_NR_se,zp)
-    corr_func_R_se   = zeropad(corr_func_R_se ,zp)
-
-    corr_func_NR_esa = zeropad(corr_func_NR_esa,zp)
-    corr_func_R_esa  = zeropad(corr_func_R_esa ,zp)
-    
-    corr_func_NR_esax = zeropad(corr_func_NR_esax,zp)
-    corr_func_R_esax  = zeropad(corr_func_R_esax ,zp)
-    
-    #######################################################
-    ######### plot 2nd order correlation function #########
-    #######################################################
-
-    println("done\n")
-
-    println("############# ########################### #############");
-    println("############ Fourier transform of pathways ############");
-    println("############# ########################### #############\n");
-
-    spec2d_NR_gsb = fftshift(fft((corr_func_NR_gsb)))
-    spec2d_R_gsb  = fftshift(fft((corr_func_R_gsb)))
-
-    spec2d_NR_se  = fftshift(fft((corr_func_NR_se)))
-    spec2d_R_se   = fftshift(fft((corr_func_R_se)))
-
-    spec2d_NR_esa = -fftshift(fft((corr_func_NR_esa)))
-    spec2d_R_esa  = -fftshift(fft((corr_func_R_esa)))
-
-    spec2d_NR_esax = -fftshift(fft((corr_func_NR_esax)))
-    spec2d_R_esax  = -fftshift(fft((corr_func_R_esax)))
-
-    println("done\n")
-
-    println("############# ########################### #############");
-    println("########## Construct absorptive 2D spectrum ###########");
-    println("############# ########################### #############\n");
-
-    spec2d_R_gsb  = circshift(reverse(spec2d_R_gsb ,dims=1),(1,0))
-    spec2d_R_se   = circshift(reverse(spec2d_R_se  ,dims=1),(1,0))
-    spec2d_R_esa  = circshift(reverse(spec2d_R_esa ,dims=1),(1,0))
-    spec2d_R_esax = circshift(reverse(spec2d_R_esax ,dims=1),(1,0))
-
 
     # calculate the absorptive spectrum of GSB, ESA, and SE
     spec2d_gsb  = spec2d_NR_gsb  + spec2d_R_gsb
@@ -751,18 +774,18 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     #BUG #TODO: So far I need to change tlist and then crop ω when using alternative way of calculating 2D signals
     #tlist = [tlist; tlist[2:end] .+ tlist[end]]
     tlist, ω = interpt(tlist,zp)
-    #ω = ω[end÷2+1:end]
+    ω = ω[end÷2+1:end]
 
     # could return corr for looking at it ... set [] to save space
-    corr = []
+    #corr = []
 
     #FACT: spec2dd behaves correctly (for coupled dimer) when plotting absorptive, absolute, dispersive and phase // spec2d now as well ! ... 
     #TODO: absl is stretched too much in ω3!
-    out = out2d{Array{ComplexF32,2}}(ω, spec2d, spec2d_r, spec2d_nr, spec2d_gsb, spec2d_R_gsb,
+    out = out2d{Array{ComplexF32,2}}(ω, spec2dd, spec2d_r, spec2d_nr, spec2d_gsb, spec2d_R_gsb,
                                      spec2d_NR_gsb, spec2d_se, spec2d_R_se, spec2d_NR_se, spec2d_esa,
                                      spec2d_R_esa, spec2d_NR_esa, corr)
 
-    out = crop2d(out,1;w_max=10,step=1) 
+    #out = crop2d(out,1;w_max=10,step=1) 
     out = round2d(out,2)
 
     return out
@@ -1455,6 +1478,7 @@ function corr2spec(corr, zp)
 
         spec = fft(fftshift(corr))
         spec = fftshift(spec)
+        #spec = circshift(spec,(-100,-100))
         spec = spec[1:end÷2,1:end÷2]
         spec = reverse(spec,dims=1)
         spec = reverse(spec,dims=2)

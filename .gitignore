@@ -8,7 +8,9 @@
 # Ignore the build directory
 #/dist
 /new_ideas/
+/Polaritons/
 /examples/01_Output/
+/examples/02_Output_displacedOscillatorTscan
 
 # The file containing environment variables
 #.env

@@ -1,18 +1,18 @@
 #!/usr/bin/julia
-using PyPlot, QuantumOptics, LinearAlgebra, FFTW, Colors,
+using MultidimensionalSpectroscopy, PyPlot, QuantumOptics, LinearAlgebra, FFTW, Colors,
         Printf, DelimitedFiles
 
 # make sure to set script directory as pwd()
 cd(@__DIR__)
 
 # include my custom cmds module
-if Sys.iswindows()
-    include("..\\cmds.jl")
-    fn = "01_Output\\"
-else
-    include("../cmds.jl")
-    fn = "01_Output/"
-end
+#if Sys.iswindows()
+#    include("..\\cmds.jl")
+#    fn = "01_Output\\"
+#else
+#    include("../cmds.jl")
+#    fn = "01_Output/"
+#end
 
 # to use PyPlot in GUI mode under Linux
 pygui(true)
@@ -20,7 +20,9 @@ pygui(true)
 # run once with "calc_2d = false" to initialize functions
 calc_2d = true
 
-cmp = cmds.create_colormap("bright");
+cmp = create_colormap("bright");
+
+##
 
 ## define functions
 
@@ -37,14 +39,15 @@ end
 
 ## geometry of coupled dimer
 # here, the point x₁, y₁ = (0,0) is the origin for point dipole 1. The dipole has an angle α₁
-# where for 0 the dipole lies along the x-axis and for 90 along the y-axis. It has a length d₁. 
-# The point dipole number 2 is located at a distance r under the angle β, and has its own dipole 
-# angle α₂ and a length d₂. 
+# where for 0 the dipole lies along the x-axis and for 90 along the y-axis. It has a length d₁.
+# The point dipole number 2 is located at a distance r under the angle β, and has its own dipole
+# angle α₂ and a length d₂.
 
 # position of dipole 1 and angle wrt to x-axis (input)
 x₁, y₁, α₁, d₁ = 0, 0, angle2rad(0), 0.25
 # r: distance, β: slip angle
 r , β          = 1.155, angle2rad(23.147495)
+#r , β          = 19.3155, angle2rad(0)
 # position of dipole 2 (calculated from above)
 x₂, y₂         = x₁ + r*cos(β), y₁ + r*sin(β)
 # angle and moment of dipole 2 (input)
@@ -53,8 +56,13 @@ x₂, y₂         = x₁ + r*cos(β), y₁ + r*sin(β)
 ## set up energies and couplings
 # homo dimer    : E1 = E2
 # hetero dimer  : E1 ≠ E2
-E₁ = 2.396
-E₂ = 2.396
+E₁ = 2.396    # energy eV -> t = hbar /eV  , 0.66 fs
+E₂ = 2.796
+#E₂ = 2.396
+E_RWA = E₁
+E_RWA = 0
+E₁ = E₁ - E_RWA
+E₂ = E₂ - E_RWA
 
 ## draw dimer
 figure(figsize=(10,4));
@@ -114,10 +122,9 @@ scatter((x₁+x₂)/2,(y₁+y₂)/2)
 H₁ = E₁ * j21 * j12                               # dipole 1
 H₂ = E₂ * j21 * j12                               # dipole 2
 
-Hₓ = J * (j12 ⊗ j21 + j21 ⊗ j12)                # Hₓ describes the exchange between dipoles 1 and 2
-# use the following with TDMs between ground- and biexciton state, this modifies
-# the energies of the ground- and doubly excited state slightly
-#Hₓ = J * ((j21+j12) ⊗ (j21+j12)) #???????????   #CHECK
+Hₓ = J * (j12 ⊗ j21 + j21 ⊗ j12);              # Hₓ describes the exchange between dipoles 1 and 2
+                                                 # use the following with TDMs between ground- and biexciton state, this modifies
+                                                 # the energies of the ground- and doubly excited state slightly
 
 H = one(b_mon) ⊗ H₁ + H₂ ⊗ one(b_mon) + Hₓ      # H is the total Hamiltonian of the system
 
@@ -145,15 +152,20 @@ Psi0 = nlevelstate(b_mon,1) ⊗ nlevelstate(b_mon,1)
 rho0 = dm(Psi0)
 
 ## time list for evaluation of master equation
-tlist = [0:0.2:150;]
+tlist = [0:0.7:400;]
 
 ## make collapse operator #CHECK #TODO: understand better (why ccc?)
-ccc = diagonaloperator(b_mon,[1, 1/4])
+ccc = diagonaloperator(b_mon,[1, 0])
+L1 = one(b_mon) ⊗ j12 # 
+L1 = ccc⊗j12 # ... ccc don't make sense
+L2 = j12 ⊗ one(b_mon) # 
+L2=j12⊗ccc
 
-Γ = [sqrt(0.005), sqrt(0.005)]
+Γ = [sqrt(0.025), sqrt(0.025)]
 #L = [sqrt(0.25)*one(b_mon)⊗j12, sqrt(0.25)*j12⊗one(b_mon)]
-L = Γ .* [ccc⊗j12, j12⊗ccc]
+L = Γ .* [L1, L2]
 
+L = [sqrt(0.055) * (j21*j12 ⊗  (j12*j21)+ (j12*j21) ⊗  (j21*j12)), Γ[2] * L2]
 #DEBUG
 #display(dense(c_ops[1])); display(dense(c_ops[2]))
 
@@ -170,9 +182,11 @@ L = Γ .* [ccc⊗j12, j12⊗ccc]
 ## Normalize TDM operators #TODO: Is this the best way to do this ?
 rho1 = μ12 * rho0 * μ12
 μ12  = μ12 / sqrt(tr(rho1))
+μ23  = μ23 / sqrt(tr(rho1)) 
+
 rho1 = μ12 * rho0 * μ12
 rho2 = μ23 * rho1 * μ23
-μ23  = μ23 / sqrt(tr(rho2)) * sqrt(2)
+μ23  = μ23 / sqrt(tr(rho2)) 
 rho2 = μ23 * rho1 * μ23
 
 ## calculate magnitude of tdm with singly excited states e1 and e2
@@ -213,12 +227,12 @@ corr = timecorrelations.correlation(tlist, rho0, H, L, μ12, μ12)
 
 ## zeropad corr and extrapolate tlist
 zp = 10
-corr = cmds.zeropad(corr,zp)
-tnew, ~ = cmds.interpt(tlist,zp)
+corr = zeropad(corr,zp)
+tnew, ~ = interpt(tlist,zp)
 
 ## convert to spectrum
 ω,spec = timecorrelations.correlation2spectrum(tnew, corr; normalize_spec=true)
-
+ω = ω .- E_RWA
 ## add the results to previous figure
 # correlation function
 ax4 = subplot(233)
@@ -264,7 +278,7 @@ end
 τc = 1
 Δ = .01
 temp = 0.3
-Λ = 1/τc; 
+Λ = 1/τc;
 λ = Δ^2 / temp
 λ = .2
 #CHECK: home.uchicago.edu/~tokmakoff/TDQMS/Notes/7._Fluctuations_3-09.pdf
@@ -282,13 +296,13 @@ function debye(ω) #TODO: understand better
     end
 end
 
-### HOW TO GET RIGHT OPERATORS ?????????? 
+### HOW TO GET RIGHT OPERATORS ??????????
 ### ????????????????????????????????????
 #a_ops = [sqrt(0.1)*((j12*j21)⊗one(b_mon)+one(b_mon)⊗(j12*j21)),spectral_density]
 a_ops = [sqrt(.32)*one(b_mon)⊗(j12*j21), debye, sqrt(.32)*(j12*j21)⊗one(b_mon),debye]
 a_ops = [(j12*j21)⊗ j12 + j12⊗(j21*j12), debye, (j21*j12)⊗ j12 + j12⊗(j12*j21), debye]
 #L = [sqrt(0.01)*j12⊗one(b_mon),sqrt(0.01)*one(b_mon)⊗j12]
-L = [sqrt(.32)*one(b_mon)⊗(j12*j21), sqrt(.32)*(j12*j21)⊗one(b_mon)]
+#L = [sqrt(.07)*one(b_mon)⊗(j12*j21), sqrt(.07)*(j12*j21)⊗one(b_mon)]
 R, ekets = timeevolution.bloch_redfield_tensor(H, [a_ops]; J=L)
 # different elements in R ... https://www.pnas.org/content/pnas/108/52/20908.full.pdf
 # changing R[1,1] let's 2D signal disappear after a certain time T
@@ -305,10 +319,10 @@ corr = expect(μ,rhot)
 
 ## zeropad data for smoothing
 zp = 11
-corr = cmds.zeropad(corr,zp)
-tnew, ~ = cmds.interpt(tout,zp)
+corr = zeropad(corr,zp)
+tnew, ~ = interpt(tout,zp)
 
-## plot correlation function from Redfield 
+## plot correlation function from Redfield
 ax4.plot(tnew,real(corr)./maximum(real(corr)),"g",linewidth=1,label="RF")
 
 ## calculate spectrum
@@ -318,7 +332,9 @@ subplot(236)
 ax5.plot(ω,spec,"g",linewidth=1,label="RF")
 
 ## calculated populations
-tout, rhot = timeevolution.master_bloch_redfield(tlist,μ12*rho0*μ12,R,H)
+tout, rhot = timeevolution.master_bloch_redfield(tlist,μ12*rho0*μ12,R,H);
+
+
 es1 = expect((j21*j12)⊗one(b_mon),rhot)
 es2 = expect(one(b_mon)⊗(j21*j12),rhot)
 # and plot
@@ -330,14 +346,15 @@ ww = [0:.1:100;]
 plot(ww,debye(ww));
 =#
 
-# select method for 2D 
+
+# select method for 2D
 method = "redfield"
 if method == "redfield"
     F       = R
     use_sub = false
 elseif method == "lindblad"
     F       = L
-    use_sub = true
+    use_sub = false
 end
 
 if calc_2d
@@ -345,24 +362,24 @@ if calc_2d
         zp = 11 # zeropad up to 2^zp
 
         ## calculate 2D spectra at
-        T = [0,50,100,200] #fs
+        T = [0, 50] #fs
 
-        out2d = Array{cmds.out2d}(undef, length(T))
+        spectra2d = Array{out2d}(undef, length(T))
 
         Threads.@threads for i = 1:length(T)
         #for i = 1:length(T)
-            out2d[i] = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
+            spectra2d[i] = make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
                                                 method;debug=true,use_sub=use_sub,
-                                                    t2coh=false,zp=zp);    #IDEA: can check 2D electronic beating
+                                                    t2coh="kin",zp=zp);    #IDEA: can check 2D electronic beating
         end
 
         ## crop 2D data and increase dw
-        out2d = [cmds.crop2d(out2d[i],1.5;w_max=3.5,step=1) for i = 1:length(T)]
+        spectra2d = [crop2d(spectra2d[i],.5 .- E_RWA;w_max=5 .-E_RWA,step=1) for i = 1:length(T)]
 
         ## plot 2D spectra for each(?) T
         # what to plot
         rep="absorptive"
-        scal="lin"
+        scal="asinh"
 
         ## make  subplot layout
         nplots = length(T);
@@ -370,7 +387,11 @@ if calc_2d
         nrows = Int32(ceil(nplots / ncols));
 
         # determine maximum value in dataset out2d[:].full2d[:,:]
-        maxi = maximum([maximum(real(out2d[i].full2d)) for i in 1:length(out2d)])
+        maxi = maximum([maximum(real(spectra2d[i].full2d)) for i in 1:length(spectra2d)])
+        ω = spectra2d[1].ω .+ E_RWA
+end
+
+if calc_2d
 
         # plot 2D spectra
         fig, ax = subplots(nrows,ncols,sharex=true,sharey=true,figsize=(ncols*3.5,nrows*3))
@@ -387,14 +408,14 @@ if calc_2d
                 end
                 sca(ax[i,j])
                 ax[i,j].set_aspect="equal"
-                cmds.plot2d(out2d[k].ω,round.(out2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
+                #plot2d(out2d[k].ω,round.(out2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi/2)
+                plot2d(ω,round.(spectra2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi/2)
                 title("2D spectrum at $(T[k]) fs")
             end
         end
         tight_layout()
         subplots_adjust(top=0.9)
 
-        ω = out2d[1].ω
         ## plot additional things, like energy levels of states
         plot([E₁, E₁], [ω[1], ω[end]],"k--",linewidth=1,alpha=0.25)
         plot([E₂, E₂], [ω[1], ω[end]],"k--",linewidth=1,alpha=0.25)
@@ -404,11 +425,11 @@ if calc_2d
         plot([ω[1], ω[end]],[energies[2:3], energies[2:3]],"g--",linewidth=1,alpha=0.25)
 
         ## Save data
-        cmds.save_2d([round.(real(out2d[i].full2d),digits=1) for i = 1:length(T)],T,fn)
+        #save_2d(out2d,T,fn)
 
         ## plot TA (summed 2D spectrum)
         figure()
-        ta = [sum(real(out2d[i].full2d),dims=1) for i in 1:length(out2d)] ./ length(out2d)
+        ta = [sum(real(spectra2d[i].full2d),dims=1) for i in 1:length(spectra2d)] ./ length(spectra2d)
         plot(ω,vcat(ta...)')
         plot(ω,zeros(size(ω)),linestyle = "dashed")
         xlabel("Energy/frequency")
@@ -416,3 +437,15 @@ if calc_2d
         tight_layout()
 
 end
+
+#
+#### use slider for flipping through 2D spectra
+#
+#using Blink, Interactive
+
+#=
+mp = @manipulate for i in slider(1:length(spectra2d))
+          clf();cmds.plot2d(spectra2d[i].ω,spectra2d[i].full2d)
+          end
+w = Window(); body!(w, mp);
+=#
