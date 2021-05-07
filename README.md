@@ -2,6 +2,8 @@
 
 __Simulate coherent multidimensional spectroscopy signals from quantum mechanical models.__
 
+<mark>Note that examples are currently not working, due to transition from CMDS.jl to MultidimensionalSpectroscopy.jl</mark>
+
 ## Introduction
 
 The code relies primarily on [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl), which is well described [here](https://docs.qojulia.org/). Further helpful examples and functionalities are found the Python project [QuTiP](http://qutip.org/).
