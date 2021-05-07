@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/CI.yml)
 [![TagBot](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/TagBot.yml/badge.svg)](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/TagBot.yml)
+[![CompatHelper](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/CompatHelper.yml/badge.svg)](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/CompatHelper.yml)
 
 __Simulate coherent multidimensional spectroscopy signals from quantum mechanical models.__
 
