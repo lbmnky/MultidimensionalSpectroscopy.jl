@@ -16,6 +16,8 @@ MultidimensionalSpectroscopy.jl requires the Julia language and [qojulia/Quantum
 
 - [QoJulia](https://docs.qojulia.org/installation/)
 
+Clone the repo ... and include the module via `using MultidimensionalSpectroscopy`.
+
 ## MultidimensionalSpectroscopy.jl - Functions
 
 Type ``?<function>`` into the REPL to access the documentation for a certain function.
