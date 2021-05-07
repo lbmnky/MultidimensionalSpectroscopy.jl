@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/CI.yml)
 
+[![TagBot](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/TagBot.yml/badge.svg)](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/TagBot.yml)
+
 __Simulate coherent multidimensional spectroscopy signals from quantum mechanical models.__
 
 *Note that examples are currently not working, due to transition from CMDS.jl to MultidimensionalSpectroscopy.jl*
