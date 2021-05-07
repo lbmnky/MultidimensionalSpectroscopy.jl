@@ -4,7 +4,7 @@
 
 __Simulate coherent multidimensional spectroscopy signals from quantum mechanical models.__
 
-<mark>Note that examples are currently not working, due to transition from CMDS.jl to MultidimensionalSpectroscopy.jl</mark>
+*Note that examples are currently not working, due to transition from CMDS.jl to MultidimensionalSpectroscopy.jl*
 
 ## Introduction
 
