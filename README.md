@@ -10,7 +10,7 @@ The module [MultidimensionalSpectroscopy.jl](/src/MultidimensionalSpectroscopy.j
 
 ## Installation
 
-CMDS requires the Julia language and [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl), which can be installed from via the standard sources:
+MultidimensionalSpectroscopy.jl requires the Julia language and [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl), which can be installed from via the standard sources:
 
 - [Julia](https://docs.julialang.org/en/v1/manual/getting-started/)
 
