@@ -1,4 +1,4 @@
-# CMDS.jl
+# MultidimensionalSpectroscopy.jl
 
 __Simulate coherent multidimensional spectroscopy signals from quantum mechanical models.__
 
@@ -6,7 +6,7 @@ __Simulate coherent multidimensional spectroscopy signals from quantum mechanica
 
 The code relies primarily on [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl), which is well described [here](https://docs.qojulia.org/). Further helpful examples and functionalities are found the Python project [QuTiP](http://qutip.org/).
 
-The module [CMDS.jl](/cmds.jl) contains the necessary functions to calculate 2D spectra from QM models and will be described below. [examples/](/examples) shows example scenarios.
+The module [MultidimensionalSpectroscopy.jl](/src/MultidimensionalSpectroscopy.jl) contains the necessary functions to calculate 2D spectra from QM models and will be described below. [examples/](/examples) shows example scenarios.
 
 ## Installation
 
@@ -16,9 +16,9 @@ CMDS requires the Julia language and [qojulia/QuantumOptics.jl](https://github.c
 
 - [QoJulia](https://docs.qojulia.org/installation/)
 
-## CMDS.jl - Functions
+## MultidimensionalSpectroscopy.jl - Functions
 
-Type ``?cmds.<function>`` into the REPL to access the documentation for a certain function.
+Type ``?<function>`` into the REPL to access the documentation for a certain function.
 
 ### Available functions:
 
@@ -82,11 +82,11 @@ out2d = Array{cmds.out2d}(undef, length(T))
 
 where `` T = [0., 5., 10., ...] `` is a vector containing population/evolution time steps.
 
-Next call `` cmds.make2dspectra() `` in a for loop
+Next call `` make2dspectra() `` in a for loop
 
 ```julia
 for i = 1:length(T)
-    out2d[i] = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],"lindblad";debug=false,zp=zp)
+    spectra2d[i] = make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],"lindblad";debug=false,zp=zp)
 end
 ```
 
@@ -95,12 +95,12 @@ with ``tlist`` being the coherence/detection time steps, ``rho0`` the equilibriu
 Using __multithreading__, several population time steps can be evaluated simultaneously:
 ```julia
 Threads.@threads for i = 1:length(T)
-    out2d[i] = cmds.make2Dspectra(...)
+    spectra2d[i] = make2Dspectra(...)
 end
 ```
-Make sure to disable all output plots within ``cmds.make2Dspectra()`` when using __multithreading__, as these might crash the execution.
+Make sure to disable all output plots within ``make2Dspectra()`` when using __multithreading__, as these might crash the execution.
 
-JLD2 can be used to conveniently store the ``out2d`` structure (does not work with cloud drive, such as pCloud). Remember to ``round2d()`` the data to save disk space.
+JLD2 can be used to conveniently store the ``spectra2d`` structure (does not work with cloud drive, such as pCloud). Remember to ``round2d()`` the data to save disk space.
 
 ```julia
 @save "C:\\path\\to\\data\\file.jld2" out2d
@@ -112,7 +112,7 @@ Data can be load as
 @load "C:\\path\\to\\data\\file.jld2" out2d
 ```
 
-However, the data format is not compatible with other software. ``cmds.save2d()`` saves ASCII files for real (.re) and imaginary (.im) parts.
+However, the data format is not compatible with other software. ``save2d()`` saves ASCII files for real (.re) and imaginary (.im) parts.
 
 ...
 
@@ -121,8 +121,8 @@ You can create a slider to flip through 2D spectra (work in progress):
 ```julia
 using Blink, Interactive
 
-mp = @manipulate for i in slider(1:length(out2d))
-          clf();cmds.plot2d(out2d[i].ω,out2d[i].full2d)
+mp = @manipulate for i in slider(1:length(spectra2d))
+          clf(); plot2d(spectra2d[i].ω,spectra2d[i].full2d)
           end
 
 w = Window(); 
@@ -134,10 +134,10 @@ body!(w, mp);
 
 The following examples [(scripts)](/examples) are available:
 
-- [CMDS.jl](#cmdsjl)
+- [MultidimensionalSpectroscopy.jl](#multidimensionalspectroscopyjl)
   - [Introduction](#introduction)
   - [Installation](#installation)
-  - [CMDS.jl - Functions](#cmdsjl---functions)
+  - [MultidimensionalSpectroscopy.jl - Functions](#multidimensionalspectroscopyjl---functions)
     - [Available functions:](#available-functions)
     - [How to use:](#how-to-use)
   - [Examples](#examples)
@@ -193,7 +193,7 @@ Another [textbook example](chem.libretexts.org/Bookshelves/Physical_and_Theoreti
 
 ![displacedHarmonicOscillator](/example_images/displHarmOsc.png)
 
-Again, using ``CMDS.jl`` we can calculate the expected 2D spectrum at ``T=0`` ...
+Again, using ``MultidimensionalSpectroscopy.jl`` we can calculate the expected 2D spectrum at ``T=0`` ...
 
 ![displacedHarmonicOscillator 2D spectrum](/example_images/displHarmOsc2D.png)
 
@@ -208,7 +208,7 @@ Of course, the latter is still greatly simplified.
 #### Does it wiggle?
 [back to TOC](#examplesTOC)
 
-The following calculations were done using the [displaced oscillator](examples\displaced_harmonic_oscillator_model.jl) model. During the population time T, the diagonal elements of the density matrix are set to zero (search for keyword "XX" in ``cmds.correlations()``; will be implemented better in a future version). The following figures show the absolute value [rephasing and non-rephasing](#R-NR) 2D spectra, which are in a vibrational coherence during T:
+The following calculations were done using the [displaced oscillator](examples\displaced_harmonic_oscillator_model.jl) model. During the population time T, the diagonal elements of the density matrix are set to zero (search for keyword "XX" in ``correlations()``; will be implemented better in a future version). The following figures show the absolute value [rephasing and non-rephasing](#R-NR) 2D spectra, which are in a vibrational coherence during T:
 
 <p float="center">
 <img src="example_images\DO_GSB_R_osc.png" width=45%/>
@@ -281,7 +281,7 @@ The resulting 2D spectrum is characterized by an elongated diagonal peak, and re
 #### Evolution of density matrix
 [back to TOC](#examplesTOC)
 
-Using ``cmds.view_dm_evo()`` you can visualize the temporal (T) evolution of the system density matrix.
+Using ``view_dm_evo()`` you can visualize the temporal (T) evolution of the system density matrix.
 
 ![dm evo](/example_images/ensemble_dmEvo.png)
 
@@ -295,7 +295,7 @@ In order to go beyond the Jaynes-Cummings model ...
 ### Disentangling GSB, SE and ESA contributions
 [back to TOC](#examplesTOC)
 
-CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.se) and ESA (out2d.esa) components. These can be conveniently visualized using ``cmds.plot2d_comps(out2d[1])``:
+MultidimensionalSpectroscopy.jl outputs the full2d spectrum, as well as the GSB (spectra2d.gsb), SE (spectra2d.se) and ESA (spectra2d.esa) components. These can be conveniently visualized using ``plot2d_comps(spectra2d[1])``:
 
 <!--![GSB](/example_images/coupledDimer_GSB.png)-->
 
@@ -313,7 +313,7 @@ CMDS.jl outputs the full2d spectrum, as well as the GSB (out2d.gsb), SE (out2d.s
 ### Disentangling rephasing and non-rephasing signals
 [back to TOC](#examplesTOC)
 
-In addition, also the rephasing (out2d.full2d_r) and non-rephasing (out2d.full2d_nr) parts of the signal are available:
+In addition, also the rephasing (spectra2d.full2d_r) and non-rephasing (spectra2d.full2d_nr) parts of the signal are available:
 
 <p float="left">
 <img src="example_images/coupledDimer_r.png"  width=49%/>
