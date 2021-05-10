@@ -1,1 +1,1 @@
-# Example "coupled dimer"
+# Examples "displaced harmonic oscillator(s)"
