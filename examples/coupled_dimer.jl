@@ -1,18 +1,8 @@
-#!/usr/bin/julia
 using MultidimensionalSpectroscopy, PyPlot, QuantumOptics, LinearAlgebra, FFTW, Colors,
         Printf, DelimitedFiles
 
 # make sure to set script directory as pwd()
 cd(@__DIR__)
-
-# include my custom cmds module
-#if Sys.iswindows()
-#    include("..\\cmds.jl")
-#    fn = "01_Output\\"
-#else
-#    include("../cmds.jl")
-#    fn = "01_Output/"
-#end
 
 # to use PyPlot in GUI mode under Linux
 pygui(true)
@@ -21,11 +11,9 @@ pygui(true)
 calc_2d = true
 
 cmp = create_colormap("bright");
-
 ##
 
 ## define functions
-
 function draw_dipole(x,y,α,d)
     quiver(x- d/2*cos(α), y - d/2*sin(α), d*cos(α), d*sin(α), angles="xy",
             scale_units="xy",scale=1,color="r")
