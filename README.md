@@ -10,8 +10,8 @@ __Simulate coherent multidimensional spectroscopy signals from quantum mechanica
 
 *Working examples:*
 
-- coupled_dimer.jl
-- displaced_harmonic_oscillator.jl
+- 01_coupled_dimer
+- 02_displaced_harmonic_oscillator
 
 
 ## Introduction

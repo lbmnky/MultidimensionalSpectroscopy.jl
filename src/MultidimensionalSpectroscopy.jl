@@ -237,7 +237,7 @@ function view_dm_evo(rhot,dt)
         pcolormesh(real(rhot[j].data),cmap="seismic"); clim([-1,1]);
         xticks([1:1:9;]); yticks([1:1:9;])
         grid("on",which="major")
-        title("tlist # $j")
+        #title("tlist # $j")
     end
     tight_layout()
 end
