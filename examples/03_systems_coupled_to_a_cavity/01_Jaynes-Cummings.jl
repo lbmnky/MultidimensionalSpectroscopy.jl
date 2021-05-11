@@ -1,11 +1,12 @@
-using PyPlot, QuantumOptics, LinearAlgebra, Random
+using MultidimensionalSpectroscopy, PyPlot, QuantumOptics, LinearAlgebra, FFTW, Colors,
+        Printf, DelimitedFiles, Random
 
 # make sure to set script directory as pwd()
 cd(@__DIR__)
 
 pygui(true)
 
-calc_2d = false
+calc_2d = true
 
 cmp = create_colormap("bright");
 
@@ -71,7 +72,7 @@ ampl_TDBC   = [1] / (N)
 gam = .1
 
 try
-    m = @which spectral_density(1)
+    local m = @which spectral_density(1)
     Base.delete_method(m)   
 catch
 end
@@ -159,11 +160,11 @@ spec = []
 angles = collect(-pi/4:0.001*pi:pi/2)
 for i in angles
     #temp1 = timecorrelations.correlation(tlist, rho0, H_k(i), J, at, a; rates=rates)
-    R, ekets = timeevolution.bloch_redfield_tensor(H_k(i), [a_ops]; J=rates .* J)
-    tout, temp = timeevolution.master_bloch_redfield(tlist,μ12*rho0,R,H_k(i))
+    local R, ekets = timeevolution.bloch_redfield_tensor(H_k(i), [a_ops]; J=rates .* J)
+    local tout, temp = timeevolution.master_bloch_redfield(tlist,μ12*rho0,R,H_k(i))
     temp1 = expect(μ12,temp)
     append!(corr, [temp1])
-    ω, temp2 = timecorrelations.correlation2spectrum(tlist, temp1; normalize_spec=false)
+    local ω, temp2 = timecorrelations.correlation2spectrum(tlist, temp1; normalize_spec=false)
     append!(spec,[temp2])
 end
 
