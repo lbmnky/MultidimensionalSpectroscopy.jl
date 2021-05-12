@@ -25,6 +25,7 @@ Interact = "0.10"
 JLD2 = "0.4"
 PyPlot = "2.9"
 QuantumOptics = "0.8"
+Revise = "3.1"
 julia = "1"
 
 [extras]
