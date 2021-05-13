@@ -15,11 +15,13 @@ cmp = create_colormap("bright");
 calc_2d = true
 
 ## Huang-Rhys factor
-D_HR = 0.5
-d = sqrt(D_HR)
+S = 1
+α = 1 # M * ω / ħ with M reduced mass
+ΔQ = sqrt(2*S/α) # ΔQ displacement
+d = ΔQ# sqrt(D_HR)
 
 b_tls = NLevelBasis(2)          # Hilbert-space of system                   Basis: {|ui⟩}
-b_vib = FockBasis(1)            # Hilbert-space of oscillator               Basis: {|vi⟩}
+b_vib = FockBasis(5)            # Hilbert-space of oscillator               Basis: {|vi⟩}
 b     = b_tls ⊗ b_vib          # combined basis
 
 j21 = transition(b_tls,2,1)                     # |e⟩⟨g|
@@ -49,8 +51,8 @@ He_el = Ee * j21 * j12
 #He_vib = dagger(D) * Hg_vib * D # issue with D and dagger(D)
 #He_vib = D * Hg_vib * dagger(D) # issue with D and dagger(D)
 #He_vib = Hg_vib  # TODO figure out what's going on here
-He_vib = ωe * (number(b_vib) + identityoperator(b_vib) * 1/2)
-He = He_el ⊗ one(b_vib) + j21*j12 ⊗ (He_vib)
+He_vib  = ωe * (number(b_vib) + identityoperator(b_vib) * 1/2)
+He      = He_el ⊗ one(b_vib) + j21*j12 ⊗ (He_vib)
 #He = He_el ⊗ one(b_vib) + j21*j12 ⊗ He_vib
 #He = He_el ⊗ He_vib
 
@@ -136,10 +138,10 @@ rho1 = dm(Psi1)
 #rho0 = thermalstate(H,T)
 
 #c_ops = [sqrt(0.05) * one(b_tls) ⊗ (a+at), sqrt(0.075) * (j21+j12) ⊗ one(b_vib)]
-Γ = [sqrt(0.05), sqrt(0.05)]
-L = Γ .* [one(b_tls) ⊗ a, j12 ⊗ one(b_vib)]
+Γ = [sqrt(0.001), sqrt(0.001), sqrt(0.04), sqrt(0.04)]
+L = Γ .* [one(b_tls) ⊗ a, j12 ⊗ one(b_vib), one(j21 * j12) ⊗ (at * a), (j21 * j12) ⊗ one(at * a)]
 
-tlist = [0:1:300;]
+tlist = [0:1:150;]
 
 corr = timecorrelations.correlation(tlist, rho0, H, L, μ12, μ12)
 
@@ -179,7 +181,7 @@ legend(["absorption", "emission"])
 
 γ = 0.02 # γ has an effect on the intensity envelop
 abs_crossSection = real(ω_abs .* sum([γ * FC[1,i]./((i * ωe + Ee - ωg .- ω_abs).^2 .- (im * γ)^2) for i in 1:length(energies_e)]))
-plot(-ω_abs,abs_crossSection./maximum(abs_crossSection))
+#plot(-ω_abs,abs_crossSection./maximum(abs_crossSection))
 
 """
 temp = FC
@@ -214,7 +216,7 @@ if calc_2d
     zp = 11
 
     ## calculate 2d spectra at
-    T = [10]
+    T = [0]
     #T = collect([0:5:100;])
 
     spectra2d = Array{out2d}(undef, length(T))
@@ -225,11 +227,11 @@ if calc_2d
     #for i = 1:length(T)
         spectra2d[i] = make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
                                             "lindblad";debug=true,use_sub=false,
-                                                zp=zp, t2coh="full");
+                                                zp=zp, t2coh="vib");
     end
 
     ## crop 2D data and increase dw
-    spectra2d = [crop2d(spectra2d[i],1.3;w_max=2.2,step=1) for i = 1:length(T)]
+    spectra2d = [crop2d(spectra2d[i],1.4;w_max=2.2,step=1) for i = 1:length(T)]
 end
 
 if calc_2d
@@ -281,7 +283,7 @@ if calc_2d
             sca(ax[i,j])
             ax[i,j].set_aspect="equal"
             plot2d(spectra2d[k].ω,round.(spectra2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
-            #plot2d(out2d[k].ω,conv2d;repr=rep,scaling=scal,norm=0)
+            #plot2d(spectra2d[k].ω,conv2d;repr=rep,scaling=scal,norm=0)
             title("2D spectrum at $(T[k]) fs")
         end
     end

@@ -12,7 +12,7 @@ pygui(true)
 
 cmp = create_colormap("bright");
 
-calc_2d = false
+calc_2d = true
 
 ## Huang-Rhys factor
 D_HR = .25
@@ -301,9 +301,9 @@ if calc_2d
     spectra2d = [crop2d(spectra2d[i],1;w_max=4,step=1) for i = 1:length(T)]
 
     ## simulate effect of laser spectrum
-    laserSpec =  .3 * exp.(-(out2d[1].ω.-1.35).^2/(2*(.19)^2)) +
-                  exp.(-(out2d[1].ω.-1.6).^2/(2*(.11)^2)) +
-                   .3 * exp.(-(out2d[1].ω.-1.85).^2/(2*(.05)^2))
+    laserSpec =  .3 * exp.(-(spectra2d[1].ω.-1.35).^2/(2*(.19)^2)) +
+                  exp.(-(spectra2d[1].ω.-1.6).^2/(2*(.11)^2)) +
+                   .3 * exp.(-(spectra2d[1].ω.-1.85).^2/(2*(.05)^2))
     
     ## plot laser spectrum
     #figure()
@@ -317,6 +317,9 @@ if calc_2d
     #for i in 1:length(out2d)
         conv2d = spectra2d[1].full2d .* IRF
     #end
+end
+
+if calc_2d
 
     ## plot 2D spectra for each(?) T
     # what to plot
@@ -348,7 +351,7 @@ if calc_2d
             sca(ax[i,j])
             ax[i,j].set_aspect="equal"
             plot2d(spectra2d[k].ω,round.(spectra2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
-            #plot2d(out2d[k].ω,conv2d;repr=rep,scaling=scal,norm=0)
+            #plot2d(spectra2d[k].ω,conv2d;repr=rep,scaling=scal,norm=0)
             title("2D spectrum at $(T[k]) fs")
         end
     end

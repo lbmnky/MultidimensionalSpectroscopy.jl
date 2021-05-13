@@ -2,7 +2,7 @@ module MultidimensionalSpectroscopy
 
 export create_colormap, zeropad, interpt, make2Dspectra, correlations,
         view_dm_evo, save_2d, load_2d, plot2d, crop2d, round2d, tri, absorptionSpectrum, plot2d_comps,
-         pretty_show_mat, vib_analysis, create_subspace, rand_normal, plot_levels, logger, out2d
+         pretty_show_mat, vib_analysis, create_subspace, rand_normal, plot_levels, logger, out2d, corr2spec
 
 using QuantumOptics, FFTW, LinearAlgebra, PyPlot, Colors, DelimitedFiles, Printf, Random, JLD2, Interact, Blink
 
@@ -646,7 +646,7 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
         corr_func_R_se  = corr_func_R_se  .* (exp.(-gτ_( tlist)) * exp.(-gt_( tlist))')
     end
 
-    use_alt = true # use alternative way of calculating signal
+    use_alt = false # use alternative way of calculating signal
 
     if use_alt
     
@@ -657,10 +657,16 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
 
         corr = corr_gsb + corr_se - corr_esa - corr_esax
 
-        spec2dd     = corr2spec(corr, zp)
-        spec2dd_gsb = corr2spec(corr_gsb, zp)
-        spec2dd_se  = corr2spec(corr_se, zp)
-        spec2dd_esa = -corr2spec(corr_esa, zp)
+        spec2dd        = corr2spec(corr, zp)
+        spec2dd_gsb    = corr2spec(corr_gsb, zp)
+        #spec2dd_R_gsb  = fft(corr_func_R_gsb)
+        #spec2dd_NR_gsb = corr2spec(corr_func_NR_gsb, zp)
+        spec2dd_se     = corr2spec(corr_se, zp)
+        #spec2dd_R_se   = corr2spec(corr_func_R_se, zp)
+        #spec2dd_NR_se  = corr2spec(corr_func_NR_se, zp)
+        spec2dd_esa    = -corr2spec(corr_esa, zp)
+        #spec2dd_R_esa  = corr2spec(corr_func_R_esa, zp)
+        #spec2dd_NR_esa = corr2spec(corr_func_NR_esa, zp)
         spec2dd_esax = -corr2spec(corr_esax, zp)
 
         #spec2d_NR_gsb = []
@@ -671,6 +677,10 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
         #spec2d_R_esa  = []
         #spec2d_NR_esax = []
         #spec2d_R_esax  = []
+
+    else
+
+        corr = []
 
     end
     
@@ -770,20 +780,26 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
 
     println("done\n")
 
-
-    #BUG #TODO: So far I need to change tlist and then crop ω when using alternative way of calculating 2D signals
     #tlist = [tlist; tlist[2:end] .+ tlist[end]]
     tlist, ω = interpt(tlist,zp)
-    ω = ω[end÷2+1:end]
 
     # could return corr for looking at it ... set [] to save space
     #corr = []
 
     #FACT: spec2dd behaves correctly (for coupled dimer) when plotting absorptive, absolute, dispersive and phase // spec2d now as well ! ... 
     #TODO: absl is stretched too much in ω3!
-    out = out2d{Array{ComplexF32,2}}(ω, spec2dd, spec2d_r, spec2d_nr, spec2d_gsb, spec2d_R_gsb,
+    if use_alt
+        #BUG #TODO: So far I need to change tlist and then crop ω when using alternative way of calculating 2D signals
+        ω = ω[end÷2+1:end]
+
+        out = out2d{Array{ComplexF32,2}}(ω, spec2dd, spec2d_r, spec2d_nr, spec2dd_gsb, spec2d_R_gsb,
                                      spec2d_NR_gsb, spec2d_se, spec2d_R_se, spec2d_NR_se, spec2d_esa,
                                      spec2d_R_esa, spec2d_NR_esa, corr)
+    else
+        out = out2d{Array{ComplexF32,2}}(ω, spec2d, spec2d_r, spec2d_nr, spec2d_gsb, spec2d_R_gsb,
+                                     spec2d_NR_gsb, spec2d_se, spec2d_R_se, spec2d_NR_se, spec2d_esa,
+                                     spec2d_R_esa, spec2d_NR_esa, corr)
+    end
 
     #out = crop2d(out,1;w_max=10,step=1) 
     out = round2d(out,2)
@@ -1325,9 +1341,9 @@ triangular (uplo="L") matrix.
 function tri(dat,uplo)
     out = copy(dat)
     if uplo == "L"
-        out.data = tril(out.data)
+        #out.data = tril(out.data)
     elseif uplo == "U"
-        out.data = triu(out.data)
+        #out.data = triu(out.data)
     end
     return out;
 end
@@ -1384,26 +1400,26 @@ for beating patterns, but could also be used to look at individual components of
 # Arguments
 * 'data'   : just the 2D as (e.g. out2d[1])
 """
-function vib_analysis(data)
-     fig, ax = subplots(3,2,sharex=true,sharey=true,figsize=(2*3.2,3*3))
+function vib_analysis(data;norm=0)
+     fig, ax = subplots(3,2,sharex=true,sharey=true,figsize=(2*3.2,2.5*3))
      sca(ax[1,1])
-     plot2d(data.ω,abs.(data.gsb_r))
-     title("GSB R")
+     plot2d(data.ω,abs.(data.gsb_r); norm=norm)
+     PyPlot.title("GSB R")
      sca(ax[1,2])
-     plot2d(data.ω,abs.(data.gsb_nr))
-     title("GSB NR")
+     plot2d(data.ω,abs.(data.gsb_nr); norm=norm)
+     PyPlot.title("GSB NR")
      sca(ax[2,1])
-     plot2d(data.ω,abs.(data.se_r))
-     title("SE R")
+     plot2d(data.ω,abs.(data.se_r); norm=norm)
+     PyPlot.title("SE R")
      sca(ax[2,2])
-     plot2d(data.ω,abs.(data.se_nr))
-     title("SE NR")
+     plot2d(data.ω,abs.(data.se_nr); norm=norm)
+     PyPlot.title("SE NR")
      sca(ax[3,1])
-     plot2d(data.ω,abs.(data.esa_r))
-     title("ESA R")
+     plot2d(data.ω,abs.(data.esa_r); norm=norm)
+     PyPlot.title("ESA R")
      sca(ax[3,2])
-     plot2d(data.ω,abs.(data.esa_nr))
-     title("ESA NR")
+     plot2d(data.ω,abs.(data.esa_nr); norm=norm)
+     PyPlot.title("ESA NR")
      tight_layout()
 end
 

@@ -18,12 +18,12 @@ cmp = create_colormap("bright");
 calc_2d = true
 
 # Huang-Rhys factor (excited state; w.r.t. ground state)
-D_HR = .5
+D_HR = .3
 # displacement
 d = sqrt(D_HR)
 
 # Huang-Rhys factor (second excited state for ESA)
-D_HRf = .05
+D_HRf = .01
 df = sqrt(D_HRf)
 
 # create Hilbert spaces
@@ -45,7 +45,7 @@ Df = displace(b_vib,df)                         # displacement operator for seco
 
 # ground states Hamiltonian
 Eg = 0                                          # energy of electronic level 
-ωg = .2                                         # energy of vibration
+ωg = 0.15                                       # energy of vibration
 Hg_el = Eg * j12 * j21                          # electronic part of Hamiltonian        == HG = g * Eg ⊗ dagger(g)
 #Hg_vib = ωg/2 * (at*a + one(b_vib))
 Hg_vib = ωg * (number(b_vib) + identityoperator(b_vib) * 1/2)   # vibrational part of H
@@ -59,8 +59,8 @@ Hg = Hg_el ⊗ one(b_vib) + j12*j21 ⊗ Hg_vib    # combined H for ground state 
 # this as transition dipole operator ...
 
 ## excited state Hamiltonian
-Ee = 2.05                                       # energy of excited electronic level
-ωe = .2                                         # energy of vibration
+Ee = 1.65                                       # energy of excited electronic level
+ωe = 0.15                                       # energy of vibration
 He_el = Ee * j21 * j12                          # electronic part of H
 #He_vib = dagger(D) * Hg_vib * D # issue with D and dagger(D)
 #He_vib = D * Hg_vib * dagger(D) # issue with D and dagger(D)
@@ -70,8 +70,8 @@ He = He_el ⊗ one(b_vib) + j21*j12 ⊗ He_vib
 #He = He_el ⊗ He_vib
 
 ## 2nd excited state Hamiltonian
-Ef = 4.45                                                               # energy of second exc. el. level
-ωf = .2                                                                 # energy of vibration
+Ef = 2 * Ee + 0.3 #4.45                                                       # energy of second exc. el. level
+ωf = 0.15                                                               # energy of vibration
 Hf_el = Ef * j32 * j23                                                  # el. part of H
 Hf_vib = ωf * (number(b_vib) + identityoperator(b_vib) * 1/2)           # vib. part of H
 Hf = Hf_el ⊗ one(b_vib) + j32*j23 ⊗ Hf_vib
@@ -171,11 +171,11 @@ rho0 = Psi0 ⊗ dagger(Psi0)                                                    
 #rho0 = thermalstate(H,T)
 
 ## Lindblad operators with rates Γ
-Γ = [sqrt(0.05), sqrt(0.075)]
+Γ = [sqrt(0.05), sqrt(0.065)]
 L = Γ .* [one(b_3ls) ⊗ (a), (j12) ⊗ one(b_vib)]
 
 ## time dimension
-tlist = [0:0.05:20;]*2*π
+tlist = [0:0.12:20;]*2*π
 
 ## calculate correlation function for ground/excited state transition
 corr = timecorrelations.correlation(tlist, rho0, H, L, μ12, μ12)
@@ -239,8 +239,12 @@ if calc_2d
     end
 
     ## crop 2D data and increase dw (step>1) if necessary
-    spectra2d = [crop2d(spectra2d[i],1.5;w_max=3,step=1) for i = 1:length(T)]
+    spectra2d = [crop2d(spectra2d[i],1.4;w_max=2.2,step=1) for i = 1:length(T)]
 
+end
+
+if calc_2d
+    
     ## plot 2D spectra for each(?) T
     # decide what to plot
     rep  = "absorptive"                             # "absorptive", "dispersive", "absolute"
@@ -279,11 +283,11 @@ if calc_2d
     ## #TODO: remove the following of make more universal
     ω = spectra2d[1].ω
 
-    plot([Ee-Eg, Ee-Eg] .+ 0*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
-    plot([Ee-Eg, Ee-Eg] .+ 2*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
+    #plot([Ee-Eg, Ee-Eg] .+ 0*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
+    #plot([Ee-Eg, Ee-Eg] .+ 2*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
     #plot([Ee-Eg, Ee-Eg] .+ 4*ωg,[ω[1], ω[end]],"k--",linewidth=0.5)
-    plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 0*ωg,"k--",linewidth=0.5)
-    plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 2*ωg,"k--",linewidth=0.5)
+    #plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 0*ωg,"k--",linewidth=0.5)
+    #plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 2*ωg,"k--",linewidth=0.5)
     #plot([ω[1], ω[end]],[Ee-Eg, Ee-Eg] .+ 4*ωg,"k--",linewidth=0.5)
 
 end
