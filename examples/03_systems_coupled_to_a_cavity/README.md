@@ -19,3 +19,31 @@ Here, ω<sub>r</sub> is the energy/frequency/... of the cavity mode, a<sup>†</
 2D spectrum of the Jaynes-Cummings model at different delays of the population time T.
 
 ![Jaynes-Cummings 2D spectrum](ex_images/JaynesCummingsSpectrum2D.png)
+
+
+<a name="coupledDimerCavity"></a>
+### Coupled dimer inside a cavity
+[back to TOC](#examplesTOC)
+
+This example simulates a coupled dimer system, coupled to a cavity. The figure shows the dimer geometry (J-aggregate), the distribution of the transition dipole moment, the energy level diagram for the subsystems and the total coupled system, the populations in either of the two excited dimer states, the cavity mode, and the ground state, the correlation function and the absorption spectrum (green using a redfield master equation).
+
+<p float="left">
+<img src="example_images/dimer_in_cavity.png"  width=100%/>
+</p>
+
+<a name="TCensemble"></a>
+### Tavis-Cummings with ensemble of TLSs
+[back to TOC](#examplesTOC)
+
+#### No disorder of TLSs energies
+
+<p float="left">
+<img src="example_images/TC_withoutDetunedTLSs.png"  width=49%/>
+</p>
+
+#### With disorder of TLSs energies
+
+<p float="left">
+<img src="example_images/TC_withDetunedTLSs_a.png"  width=49%/>
+<img src="example_images/TC_withDetunedTLSs_b.png" width=49%/>
+</p>

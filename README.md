@@ -23,9 +23,9 @@ __Simulate coherent multidimensional spectroscopy signals from quantum mechanica
   - [Available functions:](#available-functions)
 - [How to](#how-to)
 - [Examples](#examples)
-  - [coupled_dimer.jl](#coupled_dimerjl)
-  - [displaced_harmonic_oscillator_model.jl](#displaced_harmonic_oscillator_modeljl)
-  - [Jaynes-Cummings model](#jaynes-cummings-model)
+  - [The coupled dimer](#the-coupled-dimer)
+  - [Displaced (harmonic) oscillators](#displaced-harmonic-oscillators)
+  - [Light-matter coupled systems](#light-matter-coupled-systems)
   - [Ensemble of two-level systems with disorder](#ensemble-of-two-level-systems-with-disorder)
     - [Evolution of density matrix](#evolution-of-density-matrix)
   - [Tavis-Cummings](#tavis-cummings)
@@ -186,20 +186,20 @@ body!(w, mp);
 
 ## Examples
 
-The following examples [(scripts)](/examples) are available:
+The following examples [(scripts)](examples) are available:
 
 
 <a name="coupledDimer"></a>
-### coupled_dimer.jl
+### The coupled dimer
 [back to TOC](#examplesTOC)
 
 [>> link](examples/01_coupled_dimer)
 
 <a name="DO"></a>
-### displaced_harmonic_oscillator_model.jl
+### Displaced (harmonic) oscillators
 [back to TOC](#examplesTOC)
 
-[>> link](examples\02_displaced_harmonic_oscillator\README.md)
+[>> link](examples/02_displaced_harmonic_oscillator)
 
 <!---
 <a name="vibrationalCoherences"></a>
@@ -210,10 +210,10 @@ The following examples [(scripts)](/examples) are available:
 -->
 
 <a name="jaynesCummings"></a>
-### Jaynes-Cummings model
+### Light-matter coupled systems
 [back to TOC](#examplesTOC)
 
-[>> link](examples\03_systems_coupled_to_a_cavity\README.md)
+[>> link](examples/03_systems_coupled_to_a_cavity)
 
 <a name="ensembleDisorder"></a>
 ### Ensemble of two-level systems with disorder
@@ -287,30 +287,4 @@ In addition, also the rephasing (spectra2d.full2d_r) and non-rephasing (spectra2
 ### 2D spectrum of J-aggregates
 [back to TOC](#examplesTOC)
 
-<a name="coupledDimerCavity"></a>
-### Coupled dimer inside a cavity
-[back to TOC](#examplesTOC)
-
-This example simulates a coupled dimer system, coupled to a cavity. The figure shows the dimer geometry (J-aggregate), the distribution of the transition dipole moment, the energy level diagram for the subsystems and the total coupled system, the populations in either of the two excited dimer states, the cavity mode, and the ground state, the correlation function and the absorption spectrum (green using a redfield master equation).
-
-<p float="left">
-<img src="example_images/dimer_in_cavity.png"  width=100%/>
-</p>
-
-<a name="TCensemble"></a>
-### Tavis-Cummings with ensemble of TLSs
-[back to TOC](#examplesTOC)
-
-#### No disorder of TLSs energies
-
-<p float="left">
-<img src="example_images/TC_withoutDetunedTLSs.png"  width=49%/>
-</p>
-
-#### With disorder of TLSs energies
-
-<p float="left">
-<img src="example_images/TC_withDetunedTLSs_a.png"  width=49%/>
-<img src="example_images/TC_withDetunedTLSs_b.png" width=49%/>
-</p>
 
