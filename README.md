@@ -1,4 +1,4 @@
-# MultidimensionalSpectroscopy.jl
+# MultidimensionalSpectroscopy.jl <!-- omit in toc -->
 
 [![CI](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/CI.yml)
 [![TagBot](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/TagBot.yml/badge.svg)](https://github.com/lbmnky/MultidimensionalSpectroscopy.jl/actions/workflows/TagBot.yml)
@@ -14,6 +14,27 @@ __Simulate coherent multidimensional spectroscopy signals from quantum mechanica
 - 02_displaced_harmonic_oscillator
 
 
+## Table of contents <!-- omit in toc -->
+<a name="examplesTOC"></a>
+
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Function overview](#function-overview)
+  - [Available functions:](#available-functions)
+- [How to](#how-to)
+- [Examples](#examples)
+  - [Ensemble of two-level systems with disorder](#ensemble-of-two-level-systems-with-disorder)
+    - [Evolution of density matrix](#evolution-of-density-matrix)
+  - [Tavis-Cummings](#tavis-cummings)
+  - [Disentangling GSB, SE and ESA contributions](#disentangling-gsb-se-and-esa-contributions)
+  - [Disentangling rephasing and non-rephasing signals](#disentangling-rephasing-and-non-rephasing-signals)
+  - [Convolution with laser spectrum](#convolution-with-laser-spectrum)
+  - [2D spectrum of J-aggregates](#2d-spectrum-of-j-aggregates)
+  - [Coupled dimer inside a cavity](#coupled-dimer-inside-a-cavity)
+  - [Tavis-Cummings with ensemble of TLSs](#tavis-cummings-with-ensemble-of-tlss)
+    - [No disorder of TLSs energies](#no-disorder-of-tlss-energies)
+    - [With disorder of TLSs energies](#with-disorder-of-tlss-energies)
+
 ## Introduction
 
 The code relies primarily on [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl), which is well described [here](https://docs.qojulia.org/). Further helpful examples and functionalities are found the Python project [QuTiP](http://qutip.org/).
@@ -26,11 +47,11 @@ MultidimensionalSpectroscopy.jl requires the Julia language and [qojulia/Quantum
 
 - [Julia](https://docs.julialang.org/en/v1/manual/getting-started/)
 
-- [QoJulia](https://docs.qojulia.org/installation/)
+- [QOJulia](https://docs.qojulia.org/installation/)
 
 Clone the repo ... and include the module via `using MultidimensionalSpectroscopy`.
 
-## MultidimensionalSpectroscopy.jl - Functions
+## Function overview
 
 Type ``?<function>`` into the REPL to access the documentation for a certain function.
 
@@ -68,12 +89,29 @@ Type ``?<function>`` into the REPL to access the documentation for a certain fun
 
 - __plot_levels__: diagonalise Hamiltonian and plot level structure
 
-### How to use:
+## How to
 
 Set up your QM model of interest!
 
+Example: [displaced harmonic oscillator](\examples\02_displaced_harmonic_oscillator\DHO.jl)
+
+```julia
+b_tls = NLevelBasis(2)  # Hilbert-space of system                   Basis: {|ui⟩}
+b_vib = FockBasis(5)    # Hilbert-space of oscillator               Basis: {|vi⟩}
+b     = b_tls ⊗ b_vib  # combined basis
+
+j21 = transition(b_tls,2,1) # |e⟩⟨g|
+j12 = dagger(j21)           # |g⟩⟨e|
+at  = create(b_vib)         # ...
+a   = dagger(at)
+D   = displace(b_vib,d)     # with d the displacement
+
+H = ...
+```
+
 Use ``plot_levels()`` to get an overview of the energy level structure (Eigenstates) of the full systems and its components. 
 
+<a name="ordering"></a>
 Operators can be ordered into excitation sectors (0, 1, 2, ..., N excitations) by
 ```julia
 idx = sortperm(real(diag((H).data)))
@@ -86,12 +124,12 @@ This helps (makes it possible) to easily convert between eigen- and site basis o
 op_site = transf_op * op  * transf_op'
 ```
 
-If the dimension of the basis is too large ``create_subspace()`` can be used to project all necessary operators into the ground + single excitation subspace (e.g. for linear spectra), or the ground + single + double excitation subspace (for 2D spectra). 
+If the dimension of the basis is too large ``create_subspace()`` can be used to project all necessary operators into the ground + single excitation subspace (e.g. for linear spectra), or the ground + single + double excitation subspace (e.g. for 2D spectra). NOTE that creating a subspace requires ordering the operators into [excitation sectors](#ordering)
 
 To calculate 2D spectra first initialize the output array
 
 ```julia
-out2d = Array{cmds.out2d}(undef, length(T))
+spectra2d = Array{out2d}(undef, length(T))
 ```
 
 where `` T = [0., 5., 10., ...] `` is a vector containing population/evolution time steps.
@@ -143,129 +181,36 @@ w = Window();
 body!(w, mp);
 ```
 
-<a name="examplesTOC"></a>
 ## Examples
 
 The following examples [(scripts)](/examples) are available:
 
-- [MultidimensionalSpectroscopy.jl](#multidimensionalspectroscopyjl)
-  - [Introduction](#introduction)
-  - [Installation](#installation)
-  - [MultidimensionalSpectroscopy.jl - Functions](#multidimensionalspectroscopyjl---functions)
-    - [Available functions:](#available-functions)
-    - [How to use:](#how-to-use)
-  - [Examples](#examples)
-    - [coupled_dimer.jl](#coupled_dimerjl)
-    - [coupledDimer.jl with slightly detuned monomers and reduced coupling](#coupleddimerjl-with-slightly-detuned-monomers-and-reduced-coupling)
-    - [displaced_harmonic_oscillator_model.jl](#displaced_harmonic_oscillator_modeljl)
-      - [Does it wiggle?](#does-it-wiggle)
-    - [FCF_morse-potential.jl](#fcf_morse-potentialjl)
-    - [Jaynes-Cummings model](#jaynes-cummings-model)
-    - [Ensemble of two-level systems with disorder](#ensemble-of-two-level-systems-with-disorder)
-      - [Evolution of density matrix](#evolution-of-density-matrix)
-    - [Tavis-Cummings](#tavis-cummings)
-    - [Disentangling GSB, SE and ESA contributions](#disentangling-gsb-se-and-esa-contributions)
-    - [Disentangling rephasing and non-rephasing signals](#disentangling-rephasing-and-non-rephasing-signals)
-    - [Convolution with laser spectrum](#convolution-with-laser-spectrum)
-    - [2D spectrum of J-aggregates](#2d-spectrum-of-j-aggregates)
-    - [Coupled dimer inside a cavity](#coupled-dimer-inside-a-cavity)
-    - [Tavis-Cummings with ensemble of TLSs](#tavis-cummings-with-ensemble-of-tlss)
-      - [No disorder of TLSs energies](#no-disorder-of-tlss-energies)
-      - [With disorder of TLSs energies](#with-disorder-of-tlss-energies)
 
-
+<!---
 <a name="coupledDimer"></a>
 ### coupled_dimer.jl
 [back to TOC](#examplesTOC)
+-->
 
-The properties (angles, coupling strength, etc.) of a coupled dimer system are calculated (see [/examples/coupled_dimer.jl](/examples/coupled_dimer.jl) for details) and QuantumOptics.jl is used to calculate the correlation function and linear absorption spectrum. The output provides the dimer geometry, distribution of the transition dipole moment strength, the system energy level scheme, the correlation function and spectrum.
-
-![coupledDimer](/example_images/coupledDimer.png)
-
-CMDS.jl uses QuantumOptics.jl to calculate the 3rd-order response functions in a four-wave mixing formalism and calculates the expected 2D spectrum.
-
-![coupledDimer 2D spectrum](/example_images/coupledDimer2D.png)
-
-The 2D spectrum shows the ground state bleach and stimulated emission (green/yellow/red) of the ... transition on the diagonal and the excited state absorption (blue/purple) of the ... transition as the off-diagonal peak.
-
-
-<a name="coupledDimerDetuned"></a>
-### coupledDimer.jl with slightly detuned monomers and reduced coupling
-[back to TOC](#examplesTOC)
-
-...
-
-Evolution during the population time leads to a decrease in signal intensity:
-
-![coupledDimer evolution](example_images/coupledDimer2D_evolution.png)
-
+<!---
 <a name="DO"></a>
 ### displaced_harmonic_oscillator_model.jl
 [back to TOC](#examplesTOC)
+-->
 
-Another [textbook example](chem.libretexts.org/Bookshelves/Physical_and_Theoretical_Chemistry_Textbook_Maps/Book%3A_Time_Dependent_Quantum_Mechanics_and_Spectroscopy_(Tokmakoff)/13%3A_Coupling_of_Electronic_and_Nuclear_Motion/13.01%3A_The_Displaced_Harmonic_Oscillator_Model) is the displaced oscillator (DO) model. [Here](examples/displaced_harmonic_oscillator_model.jl), two electronic levels with vibrational sub-levels are coupled and yield the correlation function and spectrum:
-
-![displacedHarmonicOscillator](/example_images/displHarmOsc.png)
-
-Again, using ``MultidimensionalSpectroscopy.jl`` we can calculate the expected 2D spectrum at ``T=0`` ...
-
-![displacedHarmonicOscillator 2D spectrum](/example_images/displHarmOsc2D.png)
-
-... and its temporal evolution.
-
-![Evolution of displacedHarmonicOscillator 2D spectrum](/example_images/displHarmOsc2D_new.png)
-
-Of course, the latter is still greatly simplified.
-
-
+<!---
 <a name="vibrationalCoherences"></a>
-#### Does it wiggle?
-[back to TOC](#examplesTOC)
+-->
 
-The following calculations were done using the [displaced oscillator](examples\displaced_harmonic_oscillator_model.jl) model. During the population time T, the diagonal elements of the density matrix are set to zero (search for keyword "XX" in ``correlations()``; will be implemented better in a future version). The following figures show the absolute value [rephasing and non-rephasing](#R-NR) 2D spectra, which are in a vibrational coherence during T:
-
-<p float="center">
-<img src="example_images\DO_GSB_R_osc.png" width=45%/>
-<img src="example_images\DO_GSB_NR_osc.png"  width=45%/>
-<img src="example_images\DO_SE_R_osc.png" width=45%/>
-<img src="example_images\DO_SE_NR_osc.png" width=45%/>
-</p>
-
-Analysis thereof potentially reveals whether a vibrational coherence "lives" on the ground or excited electronic state.
-
+<!---
 <a name="FCFmorse"></a>
-### FCF_morse-potential.jl
-[back to TOC](#examplesTOC)
+-->
 
-As an intermezzo, QuantumOptics.jl can also be used to calculate Franck-Condon factors of a transition between Morse potentials:
-
-![FCF Morse Potential](/example_images/FCfactorsMorsePot1.png)
-
-![FCF Morse Potential](/example_images/FCfactorsMorsePot.png)
-
-TODO 2D with Morse potential
-
+<!---
 <a name="jaynesCummings"></a>
 ### Jaynes-Cummings model
 [back to TOC](#examplesTOC)
-
-The coupling between a quantized optical field and a two-level system is described by the Jaynes-Cummings Hamiltonian
-
-H = ω<sub>r</subR-NR> a<sup>†</sup> a + ω<sub>a</sub> σ<sub>+</sub> σ<sub>-</sub> + ( a<sup>†</sup> σ<sub>-</sub> + a σ<sub>+</sub> )
-
-or for you to copy:
-
-```julia
-H = wc * at * a + wa * sp * sm + g * (at * sm + a * sp)
-```
-
-Here, ω<sub>r</sub> is the energy/frequency/... of the cavity mode, a<sup>†</sup>(a) is the  ... and σ<sub>+</sub>(σ<sub>-</sub>)  the ... . The calculated linear absorption spectrum of the system looks pointy:
-
-![Jaynes-Cummings](/example_images/JaynesCummingsSpectrum.png)
-
-2D spectrum of the Jaynes-Cummings model at different delays of the population time T.
-
-![Jaynes-Cummings 2D spectrum](/example_images/JaynesCummingsSpectrum2D.png)
+-->
 
 <a name="ensembleDisorder"></a>
 ### Ensemble of two-level systems with disorder
@@ -297,7 +242,7 @@ The resulting 2D spectrum is characterized by an elongated diagonal peak, and re
 
 Using ``view_dm_evo()`` you can visualize the temporal (T) evolution of the system density matrix.
 
-![dm evo](/example_images/ensemble_dmEvo.png)
+![dm evo](example_images/ensemble_dmEvo.png)
 
 <a name="tavisCummings"></a>
 ### Tavis-Cummings
