@@ -27,13 +27,12 @@ __Simulate coherent multidimensional spectroscopy signals from quantum mechanica
   - [Displaced (harmonic) oscillators](#displaced-harmonic-oscillators)
   - [Light-matter coupled systems](#light-matter-coupled-systems)
   - [Ensemble of two-level systems with disorder](#ensemble-of-two-level-systems-with-disorder)
+  - [2D spectrum of J-aggregates](#2d-spectrum-of-j-aggregates)
   - [Useful stuff](#useful-stuff)
     - [Evolution of density matrix](#evolution-of-density-matrix)
-  - [Tavis-Cummings](#tavis-cummings)
-  - [Disentangling GSB, SE and ESA contributions](#disentangling-gsb-se-and-esa-contributions)
-  - [Disentangling rephasing and non-rephasing signals](#disentangling-rephasing-and-non-rephasing-signals)
-  - [Convolution with laser spectrum](#convolution-with-laser-spectrum)
-  - [2D spectrum of J-aggregates](#2d-spectrum-of-j-aggregates)
+    - [Disentangling GSB, SE and ESA contributions](#disentangling-gsb-se-and-esa-contributions)
+    - [Disentangling rephasing and non-rephasing signals](#disentangling-rephasing-and-non-rephasing-signals)
+    - [Convolution with laser spectrum](#convolution-with-laser-spectrum)
 
 ## Introduction
 
@@ -237,6 +236,10 @@ The resulting 2D spectrum is characterized by an elongated diagonal peak, and re
 ![ensemble 2D](example_images/ensemble_2D.png)
 
 
+<a name="Jaggregate"></a>
+### 2D spectrum of J-aggregates
+[back to TOC](#examplesTOC)
+
 ### Useful stuff
 [back to TOC](#examplesTOC)
 
@@ -248,14 +251,16 @@ Using ``view_dm_evo()`` you can visualize the temporal (T) evolution of the syst
 
 ![dm evo](example_images/ensemble_dmEvo.png)
 
+<!---
 <a name="tavisCummings"></a>
 ### Tavis-Cummings
 [back to TOC](#examplesTOC)
 
 In order to go beyond the Jaynes-Cummings model ...
+-->
 
 <a name="GSB-SE-ESA"></a>
-### Disentangling GSB, SE and ESA contributions
+#### Disentangling GSB, SE and ESA contributions
 [back to TOC](#examplesTOC)
 
 MultidimensionalSpectroscopy.jl outputs the full2d spectrum, as well as the GSB (spectra2d.gsb), SE (spectra2d.se) and ESA (spectra2d.esa) components. These can be conveniently visualized using ``plot2d_comps(spectra2d[1])``:
@@ -269,7 +274,7 @@ MultidimensionalSpectroscopy.jl outputs the full2d spectrum, as well as the GSB 
 </p>
 
 <a name="R-NR"></a>
-### Disentangling rephasing and non-rephasing signals
+#### Disentangling rephasing and non-rephasing signals
 [back to TOC](#examplesTOC)
 
 In addition, also the rephasing (spectra2d.full2d_r) and non-rephasing (spectra2d.full2d_nr) parts of the signal are available:
@@ -280,12 +285,9 @@ In addition, also the rephasing (spectra2d.full2d_r) and non-rephasing (spectra2
 </p>
 
 <a name="laserConvolution"></a>
-### Convolution with laser spectrum
+#### Convolution with laser spectrum
 [back to TOC](#examplesTOC)
 
 
-<a name="Jaggregate"></a>
-### 2D spectrum of J-aggregates
-[back to TOC](#examplesTOC)
 
 
