@@ -28,7 +28,7 @@ Here, ω<sub>r</sub> is the energy/frequency/... of the cavity mode, a<sup>†</
 This example simulates a coupled dimer system, coupled to a cavity. The figure shows the dimer geometry (J-aggregate), the distribution of the transition dipole moment, the energy level diagram for the subsystems and the total coupled system, the populations in either of the two excited dimer states, the cavity mode, and the ground state, the correlation function and the absorption spectrum (green using a redfield master equation).
 
 <p float="left">
-<img src="example_images/dimer_in_cavity.png"  width=100%/>
+<img src="ex_images/dimer_in_cavity.png"  width=100%/>
 </p>
 
 <a name="TCensemble"></a>
@@ -38,12 +38,12 @@ This example simulates a coupled dimer system, coupled to a cavity. The figure s
 #### No disorder of TLSs energies
 
 <p float="left">
-<img src="example_images/TC_withoutDetunedTLSs.png"  width=49%/>
+<img src="ex_images/TC_withoutDetunedTLSs.png"  width=49%/>
 </p>
 
 #### With disorder of TLSs energies
 
 <p float="left">
-<img src="example_images/TC_withDetunedTLSs_a.png"  width=49%/>
-<img src="example_images/TC_withDetunedTLSs_b.png" width=49%/>
+<img src="ex_images/TC_withDetunedTLSs_a.png"  width=49%/>
+<img src="ex_images/TC_withDetunedTLSs_b.png" width=49%/>
 </p>
