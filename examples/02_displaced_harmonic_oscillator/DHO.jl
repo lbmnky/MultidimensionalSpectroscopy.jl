@@ -15,10 +15,13 @@ cmp = create_colormap("bright");
 calc_2d = true
 
 ## Huang-Rhys factor
-S = 1
+S = .3
 α = 1 # M * ω / ħ with M reduced mass
 ΔQ = sqrt(2*S/α) # ΔQ displacement
 d = ΔQ# sqrt(D_HR)
+
+#S = M * ω / ħ * ΔQ^2
+# bond length change between C-C and C=C is  0.19 Å
 
 b_tls = NLevelBasis(2)          # Hilbert-space of system                   Basis: {|ui⟩}
 b_vib = FockBasis(5)            # Hilbert-space of oscillator               Basis: {|vi⟩}
@@ -138,7 +141,7 @@ rho1 = dm(Psi1)
 #rho0 = thermalstate(H,T)
 
 #c_ops = [sqrt(0.05) * one(b_tls) ⊗ (a+at), sqrt(0.075) * (j21+j12) ⊗ one(b_vib)]
-Γ = [sqrt(0.001), sqrt(0.001), sqrt(0.04), sqrt(0.04)]
+Γ = [sqrt(0.01), sqrt(0.001), sqrt(0.04), sqrt(0.04)]
 L = Γ .* [one(b_tls) ⊗ a, j12 ⊗ one(b_vib), one(j21 * j12) ⊗ (at * a), (j21 * j12) ⊗ one(at * a)]
 
 tlist = [0:1:150;]
@@ -216,7 +219,7 @@ if calc_2d
     zp = 11
 
     ## calculate 2d spectra at
-    T = [0]
+    T = [0, 100]
     #T = collect([0:5:100;])
 
     spectra2d = Array{out2d}(undef, length(T))
@@ -227,7 +230,7 @@ if calc_2d
     #for i = 1:length(T)
         spectra2d[i] = make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
                                             "lindblad";debug=true,use_sub=false,
-                                                zp=zp, t2coh="vib");
+                                                zp=zp, t2coh="kin");
     end
 
     ## crop 2D data and increase dw

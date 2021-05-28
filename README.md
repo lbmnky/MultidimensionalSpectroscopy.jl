@@ -23,6 +23,9 @@ __Simulate coherent multidimensional spectroscopy signals from quantum mechanica
   - [Available functions:](#available-functions)
 - [How to](#how-to)
 - [Examples](#examples)
+  - [coupled_dimer.jl](#coupled_dimerjl)
+  - [displaced_harmonic_oscillator_model.jl](#displaced_harmonic_oscillator_modeljl)
+  - [Jaynes-Cummings model](#jaynes-cummings-model)
   - [Ensemble of two-level systems with disorder](#ensemble-of-two-level-systems-with-disorder)
     - [Evolution of density matrix](#evolution-of-density-matrix)
   - [Tavis-Cummings](#tavis-cummings)
@@ -93,7 +96,7 @@ Type ``?<function>`` into the REPL to access the documentation for a certain fun
 
 Set up your QM model of interest!
 
-Example: [displaced harmonic oscillator](\examples\02_displaced_harmonic_oscillator\DHO.jl)
+Example (see [displaced harmonic oscillator](\examples\02_displaced_harmonic_oscillator\DHO.jl))
 
 ```julia
 b_tls = NLevelBasis(2)  # Hilbert-space of system                   Basis: {|ui⟩}
@@ -104,7 +107,7 @@ j21 = transition(b_tls,2,1) # |e⟩⟨g|
 j12 = dagger(j21)           # |g⟩⟨e|
 at  = create(b_vib)         # ...
 a   = dagger(at)
-D   = displace(b_vib,d)     # with d the displacement
+D   = displace(b_vib,d)     # diplacement operator with the displacement d
 
 H = ...
 ```
@@ -186,17 +189,17 @@ body!(w, mp);
 The following examples [(scripts)](/examples) are available:
 
 
-<!---
 <a name="coupledDimer"></a>
 ### coupled_dimer.jl
 [back to TOC](#examplesTOC)
--->
 
-<!---
+[>> link](examples\01_coupled_dimer\README.md)
+
 <a name="DO"></a>
 ### displaced_harmonic_oscillator_model.jl
 [back to TOC](#examplesTOC)
--->
+
+[>> link](examples\02_displaced_harmonic_oscillator\README.md)
 
 <!---
 <a name="vibrationalCoherences"></a>
@@ -206,11 +209,11 @@ The following examples [(scripts)](/examples) are available:
 <a name="FCFmorse"></a>
 -->
 
-<!---
 <a name="jaynesCummings"></a>
 ### Jaynes-Cummings model
 [back to TOC](#examplesTOC)
--->
+
+[>> link](examples\03_systems_coupled_to_a_cavity\README.md)
 
 <a name="ensembleDisorder"></a>
 ### Ensemble of two-level systems with disorder
@@ -263,10 +266,6 @@ MultidimensionalSpectroscopy.jl outputs the full2d spectrum, as well as the GSB 
 <img src="example_images/coupledDimer_SE.png"  width=32%/>
 <img src="example_images/coupledDimer_ESA.png" width=32%/>
 </p>
-
-<!--![SE](/example_images/coupledDimer_SE.png)-->
-
-<!--![ESA](/example_images/coupledDimer_ESA.png)-->
 
 <a name="R-NR"></a>
 ### Disentangling rephasing and non-rephasing signals
