@@ -193,7 +193,7 @@ The following examples [(scripts)](/examples) are available:
 ### coupled_dimer.jl
 [back to TOC](#examplesTOC)
 
-[>> link](examples/01_coupled_dimer/README.md)
+[>> link](examples/01_coupled_dimer)
 
 <a name="DO"></a>
 ### displaced_harmonic_oscillator_model.jl
