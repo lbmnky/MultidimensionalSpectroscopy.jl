@@ -27,16 +27,13 @@ __Simulate coherent multidimensional spectroscopy signals from quantum mechanica
   - [Displaced (harmonic) oscillators](#displaced-harmonic-oscillators)
   - [Light-matter coupled systems](#light-matter-coupled-systems)
   - [Ensemble of two-level systems with disorder](#ensemble-of-two-level-systems-with-disorder)
+  - [Useful stuff](#useful-stuff)
     - [Evolution of density matrix](#evolution-of-density-matrix)
   - [Tavis-Cummings](#tavis-cummings)
   - [Disentangling GSB, SE and ESA contributions](#disentangling-gsb-se-and-esa-contributions)
   - [Disentangling rephasing and non-rephasing signals](#disentangling-rephasing-and-non-rephasing-signals)
   - [Convolution with laser spectrum](#convolution-with-laser-spectrum)
   - [2D spectrum of J-aggregates](#2d-spectrum-of-j-aggregates)
-  - [Coupled dimer inside a cavity](#coupled-dimer-inside-a-cavity)
-  - [Tavis-Cummings with ensemble of TLSs](#tavis-cummings-with-ensemble-of-tlss)
-    - [No disorder of TLSs energies](#no-disorder-of-tlss-energies)
-    - [With disorder of TLSs energies](#with-disorder-of-tlss-energies)
 
 ## Introduction
 
@@ -238,6 +235,10 @@ This system leads to the following correlation function and absorption spectrum 
 The resulting 2D spectrum is characterized by an elongated diagonal peak, and relaxation to the lowest excited state leads to sub-diagonal crosspeaks.
 
 ![ensemble 2D](example_images/ensemble_2D.png)
+
+
+### Useful stuff
+[back to TOC](#examplesTOC)
 
 <a name="evolutionDensityMatrix"></a>
 #### Evolution of density matrix
