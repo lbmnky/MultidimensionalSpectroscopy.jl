@@ -13,6 +13,8 @@ __Simulate coherent multidimensional spectroscopy signals from quantum mechanica
 - 01_coupled_dimer
 - 02_displaced_harmonic_oscillator
 
+***
+
 
 ## Table of contents <!-- omit in toc -->
 <a name="examplesTOC"></a>
@@ -26,7 +28,6 @@ __Simulate coherent multidimensional spectroscopy signals from quantum mechanica
   - [The coupled dimer](#the-coupled-dimer)
   - [Displaced (harmonic) oscillators](#displaced-harmonic-oscillators)
   - [Light-matter coupled systems](#light-matter-coupled-systems)
-  - [Ensemble of two-level systems with disorder](#ensemble-of-two-level-systems-with-disorder)
   - [2D spectrum of J-aggregates](#2d-spectrum-of-j-aggregates)
 - [Useful stuff](#useful-stuff)
   - [Evolution of density matrix](#evolution-of-density-matrix)
@@ -34,11 +35,15 @@ __Simulate coherent multidimensional spectroscopy signals from quantum mechanica
   - [Disentangling rephasing and non-rephasing signals](#disentangling-rephasing-and-non-rephasing-signals)
   - [Convolution with laser spectrum](#convolution-with-laser-spectrum)
 
+***
+
 ## Introduction
 
 The code relies primarily on [qojulia/QuantumOptics.jl](https://github.com/qojulia/QuantumOptics.jl), which is well described [here](https://docs.qojulia.org/). Further helpful examples and functionalities are found the Python project [QuTiP](http://qutip.org/).
 
 The module [MultidimensionalSpectroscopy.jl](/src/MultidimensionalSpectroscopy.jl) contains the necessary functions to calculate 2D spectra from QM models and will be described below. [examples/](/examples) shows example scenarios.
+
+***
 
 ## Installation
 
@@ -49,6 +54,8 @@ MultidimensionalSpectroscopy.jl requires the Julia language and [qojulia/Quantum
 - [QOJulia](https://docs.qojulia.org/installation/)
 
 Clone the repo ... and include the module via `using MultidimensionalSpectroscopy`.
+
+***
 
 ## Function overview
 
@@ -88,11 +95,13 @@ Type ``?<function>`` into the REPL to access the documentation for a certain fun
 
 - __plot_levels__: diagonalise Hamiltonian and plot level structure
 
+***
+
 ## How to
 
 Set up your QM model of interest!
 
-Example (see [displaced harmonic oscillator](\examples\02_displaced_harmonic_oscillator\DHO.jl))
+Example (see [displaced harmonic oscillator](\examples\02_displaced_harmonic_oscillator\DHO.jl)):
 
 ```julia
 b_tls = NLevelBasis(2)  # Hilbert-space of system                   Basis: {|ui⟩}
@@ -110,20 +119,31 @@ H = ...
 
 Use ``plot_levels()`` to get an overview of the energy level structure (Eigenstates) of the full systems and its components. 
 
+![ensemble Elevels](example_images/plot_levels_DHO.png)
+
 <a name="ordering"></a>
 Operators can be ordered into excitation sectors (0, 1, 2, ..., N excitations) by
+
 ```julia
 idx = sortperm(real(diag((H).data)))
 H.data = H.data[idx,idx]
 ...
 ```
-This helps (makes it possible) to easily convert between eigen- and site basis of the subspace, using the transform operator (`transf_op`) from the output of `create_subspace` (see below):
+
+This is required to convert between eigen- and site basis (or coupled- and uncoupled basis) when working with a subspace of the full Hilbert space, by using the transform operator (`transf_op`) from the output of `create_subspace` (see below):
 
 ```julia
 op_site = transf_op * op  * transf_op'
 ```
 
-If the dimension of the basis is too large ``create_subspace()`` can be used to project all necessary operators into the ground + single excitation subspace (e.g. for linear spectra), or the ground + single + double excitation subspace (e.g. for 2D spectra). NOTE that creating a subspace requires ordering the operators into [excitation sectors](#ordering)
+If the dimension of the basis is too large, ``create_subspace()`` can be used to project all necessary operators into the ground + single excitation subspace (e.g. for linear spectra), or the ground + single + double excitation subspace (e.g. for 2D spectra). NOTE that creating a subspace requires ordering the operators into [excitation sectors](#ordering)
+
+```julia
+H, transf_op, P, L, ... = create_subspace([H],"bi", L, ...)
+```
+
+``...`` replaces as maybe operators is desired.
+
 
 To calculate 2D spectra first initialize the output array
 
@@ -151,13 +171,13 @@ end
 ```
 Make sure to disable all output plots within ``make2Dspectra()`` when using __multithreading__, as these might crash the execution.
 
-JLD2 can be used to conveniently store the ``spectra2d`` structure (does not work with cloud drive, such as pCloud). Remember to ``round2d()`` the data to save disk space.
+JLD2 can be used to conveniently __save__ the ``spectra2d`` structure (does not work with cloud drives, such as pCloud). Remember to ``round2d()`` the data to save disk space.
 
 ```julia
 @save "C:\\path\\to\\data\\file.jld2" out2d
 ```
 
-Data can be load as 
+Data can then be load as 
 
 ```julia
 @load "C:\\path\\to\\data\\file.jld2" out2d
@@ -179,6 +199,8 @@ mp = @manipulate for i in slider(1:length(spectra2d))
 w = Window(); 
 body!(w, mp);
 ```
+
+***
 
 ## Examples
 
@@ -211,6 +233,7 @@ The following examples [(scripts)](examples) are available:
 
 [>> link](examples/03_systems_coupled_to_a_cavity)
 
+<!---
 <a name="ensembleDisorder"></a>
 ### Ensemble of two-level systems with disorder
 [back to TOC](#examplesTOC)
@@ -234,11 +257,13 @@ This system leads to the following correlation function and absorption spectrum 
 The resulting 2D spectrum is characterized by an elongated diagonal peak, and relaxation to the lowest excited state leads to sub-diagonal crosspeaks.
 
 ![ensemble 2D](example_images/ensemble_2D.png)
-
+-->
 
 <a name="Jaggregate"></a>
 ### 2D spectrum of J-aggregates
 [back to TOC](#examplesTOC)
+
+***
 
 ## Useful stuff
 [back to TOC](#examplesTOC)
@@ -268,20 +293,21 @@ MultidimensionalSpectroscopy.jl outputs the full2d spectrum, as well as the GSB 
 <!--![GSB](/example_images/coupledDimer_GSB.png)-->
 
 <p float="center">
-<img src="example_images/coupledDimer_GSB.png" width=32%/>
-<img src="example_images/coupledDimer_SE.png"  width=32%/>
-<img src="example_images/coupledDimer_ESA.png" width=32%/>
+<img src="example_images/coupledDimer_absorptive_GSB_SE_ESA.png" width=100%/>
 </p>
+
+As you can see, the absorptive 2D data is composed of overlapping components, which can partially cancel out. One specific example is a hetero dimer without coupling: In this case the cross-peaks are absent from the absorptive 2D data, due to the cancellation of positive GSB with negative ESA. 
 
 <a name="R-NR"></a>
 ### Disentangling rephasing and non-rephasing signals
 [back to TOC](#examplesTOC)
 
-In addition, also the rephasing (spectra2d.full2d_r) and non-rephasing (spectra2d.full2d_nr) parts of the signal are available:
+In addition, also the rephasing (spectra2d.full2d_r) and non-rephasing (spectra2d.full2d_nr) parts of the signal can be plotted. Comparison with the absorptive representation shows that the latter exhibits sharper features in the 2D spectrum. 
 
 <p float="left">
-<img src="example_images/coupledDimer_r.png"  width=49%/>
-<img src="example_images/coupledDimer_nr.png" width=49%/>
+<img src="example_images/coupledDimer_absorptive.png"  width=32%/>
+<img src="example_images/coupledDimer_r.png"  width=32%/>
+<img src="example_images/coupledDimer_nr.png" width=32%/>
 </p>
 
 <a name="laserConvolution"></a>
