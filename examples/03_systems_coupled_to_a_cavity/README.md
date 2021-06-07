@@ -47,3 +47,22 @@ This example simulates a coupled dimer system, coupled to a cavity. The figure s
 <img src="ex_images/TC_withDetunedTLSs_a.png"  width=49%/>
 <img src="ex_images/TC_withDetunedTLSs_b.png" width=49%/>
 </p>
+
+
+## N TLSs in cavity
+
+The script ``03_N_TLSs_in_cavity_w_RF.jl`` ... with the parameters found in ``parameters/A.params`` ... Shown are the energy levels of the individual and combines system(s) with the red dashed lines being included in the single-excitation manifold and the blue-dashed lines in the double-excitation manifold.
+
+![test](ex_images/03_A/energyLvls.png)
+
+The resulting population kinetics and coherences (expectation values)
+
+![test](ex_images/03_A/kinetics.png)
+
+And the evolution of the 2D spectra, absorptive/real
+
+![test](ex_images/03_A/2Dspectrum_abst.png)
+
+or absolute/magnitude
+
+![test](ex_images/03_A/2Dspectrum_absl.png)

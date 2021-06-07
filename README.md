@@ -101,7 +101,7 @@ Type ``?<function>`` into the REPL to access the documentation for a certain fun
 
 Set up your QM model of interest!
 
-Example (see [displaced harmonic oscillator](\examples\02_displaced_harmonic_oscillator\DHO.jl)):
+Example (see [displaced harmonic oscillator](\examples\02_displaced_harmonic_oscillator\DHO.jl), as well as documentation of [QuantumOptics.jl](https://docs.qojulia.org/)):
 
 ```julia
 b_tls = NLevelBasis(2)  # Hilbert-space of system                   Basis: {|ui⟩}
@@ -119,20 +119,29 @@ H = ...
 
 Use ``plot_levels()`` to get an overview of the energy level structure (Eigenstates) of the full systems and its components. 
 
+```julia
+plot_levels(H,0) # 0: shift in x-direction (change to display multiple energy diagrams next to each other)
+```
+
+Result: 
+
 ![ensemble Elevels](example_images/plot_levels_DHO.png)
 
 <a name="ordering"></a>
-Operators can be ordered into excitation sectors (0, 1, 2, ..., N excitations) by
+Operators can be ordered by increasing energy (diagonal elements of Hamiltonian) by 
 
 ```julia
 idx = sortperm(real(diag((H).data)))
 H.data = H.data[idx,idx]
 ...
 ```
-
-This is required to convert between eigen- and site basis (or coupled- and uncoupled basis) when working with a subspace of the full Hilbert space, by using the transform operator (`transf_op`) from the output of `create_subspace` (see below):
+<!---
+and grouped into excitation sectors (0, 1, 2, ..., N excitations) by
+-->
+This is required to convert between eigen- and site basis (or coupled- and uncoupled basis) when working with a subspace of the full Hilbert space, by using the transform operator (`transf_op`) from the output of `create_subspace()` (see below):
 
 ```julia
+H, transf_op, P, L, rho0, ... = create_subspace(H,"bi", L, rho0, ...)
 op_site = transf_op * op  * transf_op'
 ```
 

@@ -21,10 +21,6 @@ end
 mod_name = "parameters/" * mod_name
 include( mod_name * ".params")
 
-
-
-
-
 logger(String(read(mod_name * ".params")), fn_log)
 
 pygui(true)
@@ -461,7 +457,7 @@ end
 if calc_2d
     ## plot 2D spectra for each(?) T
     # what to plot
-    rep="absl"
+    rep="abst"
     scal="lin"
 
     ## make  subplot layout
