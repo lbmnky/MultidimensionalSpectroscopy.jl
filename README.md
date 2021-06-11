@@ -13,8 +13,6 @@ __Simulate coherent multidimensional spectroscopy signals from quantum mechanica
 - 01_coupled_dimer
 - 02_displaced_harmonic_oscillator
 
-***
-
 
 ## Table of contents <!-- omit in toc -->
 <a name="examplesTOC"></a>
@@ -35,7 +33,6 @@ __Simulate coherent multidimensional spectroscopy signals from quantum mechanica
   - [Disentangling rephasing and non-rephasing signals](#disentangling-rephasing-and-non-rephasing-signals)
   - [Convolution with laser spectrum](#convolution-with-laser-spectrum)
 
-***
 
 ## Introduction
 
@@ -43,7 +40,6 @@ The code relies primarily on [qojulia/QuantumOptics.jl](https://github.com/qojul
 
 The module [MultidimensionalSpectroscopy.jl](/src/MultidimensionalSpectroscopy.jl) contains the necessary functions to calculate 2D spectra from QM models and will be described below. [examples/](/examples) shows example scenarios.
 
-***
 
 ## Installation
 
@@ -55,7 +51,6 @@ MultidimensionalSpectroscopy.jl requires the Julia language and [qojulia/Quantum
 
 Clone the repo ... and include the module via `using MultidimensionalSpectroscopy`.
 
-***
 
 ## Function overview
 
@@ -95,7 +90,7 @@ Type ``?<function>`` into the REPL to access the documentation for a certain fun
 
 - __plot_levels__: diagonalise Hamiltonian and plot level structure
 
-***
+
 
 ## How to
 
@@ -209,8 +204,6 @@ w = Window();
 body!(w, mp);
 ```
 
-***
-
 ## Examples
 
 The following examples [(scripts)](examples) are available:
@@ -271,8 +264,6 @@ The resulting 2D spectrum is characterized by an elongated diagonal peak, and re
 <a name="Jaggregate"></a>
 ### 2D spectrum of J-aggregates
 [back to TOC](#examplesTOC)
-
-***
 
 ## Useful stuff
 [back to TOC](#examplesTOC)

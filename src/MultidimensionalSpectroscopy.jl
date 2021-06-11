@@ -762,13 +762,13 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     # sum rephasing and non-rephasing spectra individually
     spec2d_r =  spec2d_R_gsb +
                 spec2d_R_se  +
-                spec2d_R_esa# +
-                #spec2d_R_esax
+                spec2d_R_esa +
+                spec2d_R_esax
 
     spec2d_nr = spec2d_NR_gsb +
                 spec2d_NR_se  +
-                spec2d_NR_esa #+
-#                spec2d_NR_esax;
+                spec2d_NR_esa +
+                spec2d_NR_esax;
 
     # Subtract esax from gsb. Additional channel to simulate ground state recovery
     spec2d_gsb = spec2d_gsb + spec2d_esax
@@ -1000,11 +1000,11 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
         #μexp_cc = tri(μ_ge,"L")
     elseif pathway[end] == 'x'
         μ_ef    =  μ_ge
-        μexp    =  μ_ge
+        μexp    =  tri(μ_ge,"U")
         #μexp_cc = -μ_ge
         pathway = chop(pathway)
     else
-        μexp    =  μ_ge
+        μexp    =  tri(μ_ge,"U")
         #μexp_cc =  μ_ge
     end
 
