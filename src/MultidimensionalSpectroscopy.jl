@@ -1341,9 +1341,9 @@ triangular (uplo="L") matrix.
 function tri(dat,uplo)
     out = copy(dat)
     if uplo == "L"
-        #out.data = tril(out.data)
+        out.data = tril(out.data)
     elseif uplo == "U"
-        #out.data = triu(out.data)
+        out.data = triu(out.data)
     end
     return out;
 end
