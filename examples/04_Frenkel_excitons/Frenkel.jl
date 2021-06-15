@@ -21,7 +21,7 @@ function dω(stdev)
     return rand_normal(0,stdev)
 end
 
-tlist = [0:5.:250;]
+tlist = [0:5.:750;]
 corr = zeros(length(tlist))
 
 cmp = create_colormap("bright");
@@ -166,7 +166,7 @@ gt = D^2 * tc^2 * (exp.(-tlist./tc) .+ tlist./tc .- 1)
 
 F = L
 
-M = 50
+M = 500
 for i in 1:M
     println(i)
 
@@ -193,7 +193,7 @@ for i in 1:M
         N_defect = 0
     end
     #global N_defect = rand(1:10)    
-    global N_defect = Int8(round(rand(Normal(3, 2))))
+    global N_defect = Int8(round(rand(Normal(5, .01))))
     if N_defect <= 0
         N_defect = 1
     end
@@ -255,9 +255,17 @@ ylim((0,3))
 legend()
 
 #corr /= M
-corr =corr .* exp.(-gt)
+#corr =corr .* exp.(-gt)
 
 freqRWA = exp.(-1im * E_RWA .* tlist) .* exp.(1im * E_RWA .* vcat(-reverse(tlist)[1:end-1],tlist))'
+
+if calc_2d
+    #corr2d = corr2d .* exp.(-gt) .* vcat(reverse(exp.(-gt))[1:end-1],exp.(-gt))'
+    #spec2d  = corr2spec(corr2d .* freqRWA,10)
+
+    figure()
+    pcolor(real(spec2d))
+end
 
 zp = 11
 corr    = zeropad(corr,zp)

@@ -34,7 +34,7 @@ end
 # position of dipole 1 and angle wrt to x-axis (input)
 x₁, y₁, α₁, d₁ = 0, 0, angle2rad(0), 0.25
 # r: distance, β: slip angle
-r , β          = 1.155, angle2rad(23.147495)
+r , β          = 100.155, angle2rad(23.147495)
 #r , β          = 19.3155, angle2rad(0)
 # position of dipole 2 (calculated from above)
 x₂, y₂         = x₁ + r*cos(β), y₁ + r*sin(β)
