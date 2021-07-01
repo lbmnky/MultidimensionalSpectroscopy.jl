@@ -1,5 +1,11 @@
-# This example follows the approach by Luer et al. doi:10.1021/acs.jpclett.6b02704 to simulate 
-# Frenkel excitons in TDBC J-aggregates
+#= 
+This example follows the approach by Luer et al. doi:10.1021/acs.jpclett.6b02704 to simulate 
+Frenkel excitons in TDBC J-aggregates.
+
+Essentially it averages many different realisations of a J-aggregate, resulting in an
+averaged, smooth lineshape. 
+
+=#
 
 using MultidimensionalSpectroscopy, PyPlot, QuantumOptics, LinearAlgebra, FFTW, Colors,
         Printf, DelimitedFiles, Random, Combinatorics, Distributions
@@ -9,7 +15,7 @@ cd(@__DIR__)
 
 pygui(true)
 
-calc_2d = false 
+calc_2d = false
 
 try
     local m = @which dω(1)
@@ -26,7 +32,7 @@ corr = zeros(length(tlist))
 
 cmp = create_colormap("bright");
 
-N = 35
+N = 70
 
 #E = [2.41 * dE_n[i] for i in 1:N]
 E_mon = 2.41
@@ -255,7 +261,7 @@ ylim((0,3))
 legend()
 
 #corr /= M
-#corr =corr .* exp.(-gt)
+corr =corr .* exp.(-gt)
 
 freqRWA = exp.(-1im * E_RWA .* tlist) .* exp.(1im * E_RWA .* vcat(-reverse(tlist)[1:end-1],tlist))'
 
