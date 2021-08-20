@@ -1048,13 +1048,9 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
     if pathway[1] == 'R'        # first interaction from right if rephasing
         #rho1    = rho0 * μ_ge
         rho1    = rho0 * tri(μ_ge,"U")
-        #rho1_cc = μ_ge * rho0
-        #rho1_cc = tri(μ_ge,"L") * rho0
     elseif pathway[1] == 'N'    # first interaction from left if non-rephasing
         #rho1    = μ_ge * rho0
         rho1    = tri(μ_ge,"L") * rho0
-        #rho1_cc = rho0 * μ_ge
-        #rho1_cc = rho0 * tri(μ_ge,"U")
     else
         error("MultidimensionalSpectroscopy.jl(correlations) -- No pathway selected!")
     end
@@ -1063,26 +1059,20 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
     if pathway[end] == 'a' # if esa pathway use μb
         #μexp = -μb         # minus sign follows from Feynman diagrams
         μexp    = tri(μ_ef,"U") # ... removed -1
-        #μexp_cc = -μ_ef
     elseif pathway[end] == 'e'
         μexp    = tri(μ_ge,"U")
-        #μexp_cc = tri(μ_ge,"L")
     elseif pathway[end] == 'x'
         μ_ef    =  μ_ge
         μexp    =  tri(μ_ge,"U")
-        #μexp_cc = -μ_ge
         pathway = chop(pathway)
     else
         μexp    =  tri(μ_ge,"U")
-        #μexp_cc =  μ_ge
     end
 
     # calculate evolution during t1(τ)
     τ = tlist; tout, rho1_τ    = t_ev(τ,rho1,H,F)
-    #τ = tlist; tout, rho1_τ_cc = t_ev(τ,rho1_cc,H,F)
 
     # add progress bar #TODO: make compatible with multiple Threads
-    
     R = length(collect(1:20:length(rho1_τ)))
     Tpr = T[end]
     print(Threads.threadid())
@@ -1112,32 +1102,24 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
             #------------------------#
             #rho2    =   rho1_τ[i]     * μ_ge
             rho2    =   rho1_τ[i]    * tri(μ_ge,"L")
-            #rho2_cc =   μ_ge         * rho1_τ_cc[i]
-    #         rho2_cc =   tri(μ_ge,"U")* rho1_τ_cc[i]
-            rho2a = rho2
+            rho2a   =   rho2
             # eliminate on-diagonal or off-diagonal elements
             if t2coh == "kin"
                 rho2.data = tril(triu(rho2.data))
-    #            rho2_cc.data = tril(triu(rho2_cc.data))
             elseif t2coh == "vib"
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
-    #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
             elseif t2coh == "full"
-                #
+                # do nothing
             end
             rho2b = rho2
             # time evolution during t2(T)-time
             if T[end] != 0
                 tout, rho2_T = t_ev(T,rho2,H,F)
                 rho2 = rho2_T[end]
-    #            tout, rho2_T_cc = t_ev(T,rho2_cc,H,F)
-    #            rho2_cc = rho2_T_cc[end]
             end
             # third field interaction
             #rho3   = μ_ge * rho2
             rho3   = tri(μ_ge,"L")    * rho2
-            #rho3_cc   = μ_ge * rho2_cc
-    #        rho3_cc   = tri(μ_ge,"U") * rho2_cc
 
         elseif pathway == "NR_gsb"
             #-------------------------#
@@ -1146,30 +1128,22 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
             #-------------------------#
             #rho2 = μ_ge * rho1_τ[i]
             rho2 = tri(μ_ge,"U") * rho1_τ[i]
-            #rho2_cc = rho1_τ_cc[i] * μ_ge
-    #        rho2_cc = rho1_τ_cc[i] * tri(μ_ge,"L")
 
             if t2coh == "kin"
                 rho2.data = tril(triu(rho2.data))
-    #            rho2_cc.data = tril(triu(rho2_cc.data))
             elseif t2coh == "vib"
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
-    #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
             elseif t2coh == "full"
-                #
+                # do nothing
             end
 
             if T[end] != 0
                 tout, rho2_T = t_ev(T,rho2,H,F)
                 rho2 = rho2_T[end]
-    #            tout, rho2_T_cc = t_ev(T,rho2_cc,H,F)
-    #            rho2_cc = rho2_T_cc[end]
             end
 
             #rho3   = μ_ge * rho2
             rho3   = tri(μ_ge,"L") * rho2
-            #rho3_cc = rho2_cc * μ_ge
-    #        rho3_cc = rho2_cc * tri(μ_ge,"U")
 
         elseif pathway == "R_se"
             #------------------------------#
@@ -1178,30 +1152,22 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
             #------------------------------#
             #rho2 = μ_ge * rho1_τ[i]
             rho2 = tri(μ_ge,"L") * rho1_τ[i]
-            #rho2_cc = rho1_τ_cc[i] * μ_ge
-    #        rho2_cc = rho1_τ_cc[i] * tri(μ_ge,"U")
 
             if t2coh == "kin"
                 rho2.data = tril(triu(rho2.data))
-    #            rho2_cc.data = tril(triu(rho2_cc.data))
             elseif t2coh == "vib"
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
-    #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
             elseif t2coh == "full"
-                #
+                # do nothing
             end
 
             if T[end] != 0
                 tout, rho2_T = t_ev(T,rho2,H,F)
                 rho2 = rho2_T[end]
-    #            tout, rho2_T_cc = t_ev(T,rho2_cc,H,F)
-    #            rho2_cc = rho2_T_cc[end]
             end
 
             #rho3   =       rho2 * μ_ge
             rho3   =       rho2 * tri(μ_ge,"L")
-            #rho3_cc = μ_ge * rho2
-    #        rho3_cc = tri(μ_ge,"L") * rho2
 
         elseif pathway == "NR_se"
             #------------------------------#
@@ -1210,32 +1176,24 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
             #------------------------------#
             #rho2 =      rho1_τ[i]   * μ_ge
             rho2 =      rho1_τ[i]   * tri(μ_ge,"U")
-            #rho2_cc = μ_ge * rho1_τ_cc[i]
-    #        rho2_cc = tri(μ_ge,"L") * rho1_τ_cc[i]
 
             if t2coh == "kin"
                 rho2.data = tril(triu(rho2.data))
-    #            rho2_cc.data = tril(triu(rho2_cc.data))
             elseif t2coh == "vib"
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
-    #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
             elseif t2coh == "full"
-                #
+                # do nothing
             end
 
             if T[end] != 0
                 tout, rho2_T = t_ev(T,rho2,H,F)
                 rho2 = rho2_T[end]
-    #            tout, rho2_T_cc = t_ev(T,rho2_cc,H,F)
-    #            rho2_cc = rho2_T_cc[end]
             end
 
             #rho2.data[1,1] = 0
 
             #rho3   =       rho2 * μ_ge
             rho3   =       rho2 * tri(μ_ge,"L")
-            #rho3_cc = μ_ge * rho2
-    #        rho3_cc = tri(μ_ge,"U") * rho2
 
         elseif pathway == "R_esa"
             #μ_ef = μ_ge# + μ_ef # after relaxation, reabsorption is part of esa (!?)
@@ -1245,29 +1203,22 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
             #------------------------------#
             #rho2 = μ_ge * rho1_τ[i]
             rho2 = tri(μ_ge,"L")    * rho1_τ[i]
-            #rho2_cc = rho1_τ_cc[i]  * μ_ge
-    #        rho2_cc = rho1_τ_cc[i]  * tri(μ_ge,"U")
 
             if t2coh == "kin"
                 rho2.data = tril(triu(rho2.data))
-    #            rho2_cc.data = tril(triu(rho2_cc.data))
             elseif t2coh == "vib"
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
-    #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
             elseif t2coh == "full"
+                # do nothing
             end
 
             if T[end] != 0
                 tout, rho2_T = t_ev(T,rho2,H,F)
                 rho2 = rho2_T[end]
-    #            tout, rho2_T_cc = t_ev(T,rho2_cc,H,F)
-    #            rho2_cc = rho2_T_cc[end]
             end
 
             #rho3   = μ_ef * rho2
             rho3    = tri(μ_ef,"L") * rho2
-            #rho3_cc = rho2_cc       * μ_ef
-    #        rho3_cc = rho2_cc       * tri(μ_ef,"U")
 
         elseif pathway == "NR_esa"
             #μ_ef = μ_ge #+ μ_ef
@@ -1279,54 +1230,39 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
             rho2 =      rho1_τ[i]   * tri(μ_ge,"U")
             #rho2 =      μ_ge * rho1_τ[i]
 
-            #rho2_cc = μ_ge * rho1_τ_cc[i]
-    #        rho2_cc = tri(μ_ge,"L") * rho1_τ_cc[i]
-            #rho2_cc = rho1_τ_cc[i] * μ_ge
-
             if t2coh == "kin"
                 rho2.data = tril(triu(rho2.data))
-    #            rho2_cc.data = tril(triu(rho2_cc.data))
             elseif t2coh == "vib"
                 rho2.data = tril(rho2.data,-1) + triu(rho2.data,1)
-    #            rho2_cc.data = tril(rho2_cc.data,-1) + triu(rho2_cc.data,1)
             elseif t2coh == "full"
+                # do nothing
             end
 
             if T[end] != 0
                 tout, rho2_T = t_ev(T,rho2,H,F)
                 rho2 = rho2_T[end]
-    #            tout, rho2_T_cc = t_ev(T,rho2_cc,H,F)
-    #            rho2_cc = rho2_T_cc[end]
             end
 
             #rho3    = μ_ef * rho2
-            rho3    = tri(μ_ef,"L") * rho2
-            #rho3_cc = rho2_cc * μ_ef
-    #        rho3_cc = rho2_cc * tri(μ_ef,"U")
-            
+            rho3    = tri(μ_ef,"L") * rho2            
         end
 
         # calculate time evolution of ρ during detection time t
         t = tlist; tout, rho3_t     = t_ev(t,rho3,H_T,F)
 
-    #    t = tlist; tout, rho3_t_cc  = t_ev(t,rho3_cc,H,F)
 
         # calc. exp. v. for GSB and SE (μexp = μ12) and for ESA (μexp = μ23)
         corr[i,:]    = (expect(μexp,conj(rho3_t))) # .* exp.(-gt) #TODO: lineshape f
-    #    corr_cc[i,:] = real(expect(μexp_cc,conj(rho3_t_cc)))
+        # ALTERNATIVELY take the trace: Tr(Aρ)
+        # for j=1:length(t)
+        #     corr[i, j] = tr(μexp.data * real(rhot_temp[j].data))
+        # end
 
-        #DELETE
-        #corr = corr + corr_cc
         #TODO: damping function t
         #D = .4
         #τc = 10
         #gt = (exp.(-t./τc) .+ t./τc .- 1)
         #corr[i,:] = corr[i,:] .* exp.(-gt)
-
-        # ALTERNATIVELY take the trace: Tr(Aρ)
-        #for j=1:length(t)
-        #    corr_cc[i, j] = tr(real(rhot_temp_cc[j].data * μexp.data))
-        #end
 
         # progress bar update
         if mod(i,20) == 0
