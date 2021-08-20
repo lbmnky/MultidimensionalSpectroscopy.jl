@@ -867,7 +867,13 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
 end
 
 """
-    function crop2d()
+    function crop2d(data_struct,w_min;w_max=100,step=1)
+
+# Arguments
+* 'data_struct'     : full data structure out2d
+* 'w_min'           : lower cut in frequency / energy
+* 'w_max'           : upper cut in frequency / energy
+* 'step'            : step in frequency dimension (in data points)
 
 Use to crop 2D spectra to smaller size.
 """
@@ -895,7 +901,11 @@ function crop2d(data_struct,w_min;w_max=100,step=1)
 end
 
 """
-    function round2d()
+    function round2d(data_struct,digits=2)
+
+# Arguments
+* 'data_struct' : from out2d
+* 'digits'      : the precision
 
 Use to round 2D spectra to smaller size.
 """
