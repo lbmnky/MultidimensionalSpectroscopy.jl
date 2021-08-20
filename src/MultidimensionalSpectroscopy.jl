@@ -12,19 +12,20 @@ using QuantumOptics, FFTW, LinearAlgebra, PyPlot, Colors, DelimitedFiles, Printf
 Plots the 2D data.
 
 # Arguments
-ω         : frequency / energy axis
-data      : data structure of 2D output
+ω         : frequency / energy axis (must be equal in both dimensions)
+data      : data structure of 2D calculation output
 repr      : pick a representation ("absorptive", "dispersive", "absolute")
-norm_spec : normalize to abs.(maximum(data)), where data is the spectrum to
+norm_spec : normalize to abs.(maximum(data)), where data is the 2D spectrum to
             be plotted
 scaling   : pick z-scaling ("lin", "tan", "cube", "asinh")
 norm      : if norm == 0 normalize each 2D spectrum individually, else normalize
-            all spectra to norm = <val>
+            all spectra to norm = <val>, where <val> can be the overall maximum of 
+            the dataset (for all evolution time steps, T)
 
 """
 function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", norm=0)
 
-    ## select 2D spectrum to plot
+    ## select the representation
     if repr in ["absorptive", "abst", "real"]
         data = real(data)
         cmp = create_colormap()
@@ -41,14 +42,15 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
         cmp = "rainbow"
     end
 
-    ## normalize 2D spectrum to plot
+    ## normalize 2D spectrum to maximum
     if norm_spec
         data = data/maximum(abs.(data));
     end
 
+    #TODO: let user set the sensitivity of contourlines
     sensitivity = "++"
 
-    ## make levels for contourplot with different scaling
+    ## make levels for contourplot with different sensitivity...
     lvls = [-1.025:0.05:1.025;]
     if sensitivity == "+++"
         lvls = [-1,-.9,-.8,-.7,-.6,-.5,-.4,-.3,-.2,-.1,-.08,-.06,-.04,-.02,-.01,-0.001, 0,
@@ -62,8 +64,9 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
     else
     end
 
+    # ... and scaling
     if scaling == "lin"
-        #
+        # do nothing
     elseif scaling == "tan"
         lvls = tan.(lvls); lvls = lvls ./ maximum(lvls);
     elseif scaling == "cube"
@@ -72,27 +75,30 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
         lvls = asinh.(0.1*lvls); lvls = lvls ./ maximum(lvls);
     end
 
-
-    # rescale lvls to data (don't rescale data, takes more time)
-    m = -1*(maximum(abs.(data))); M = (maximum(abs.(data)))
-    if m == 0 && M == 0
+    # rescale lvls to data (don't rescale data, as it takes more time)
+    # - redundant if data is normalized to 1.
+    m = -1 * (maximum(abs.(data))); M = (maximum(abs.(data)))
+    if m == 0 && M == 0             # set minimum level in case m == 0 and M == 0
         lvls = 0.001 * lvls;
-    elseif m == Inf || M == Inf
+    elseif m == Inf || M == Inf     # throw error in case of inf
         println("\nERROR: z-value is Inf!\n")
-    else
+    else                            # scale lvls
         lvls = lvls * maximum(abs.([m, M]));
         lvls_ticks = [-1:0.2:1;] * maximum(abs.([m, M]))
     end
 
     # normalize to global maximum with evolution time T scan
     if norm == 0
+        # do nothing
     else
         lvls = lvls ./ maximum(lvls) * norm;
     end
 
-    
     ## plot data as filled contour
+    
+    # choose convention
     conv = "ω3ω1"
+
     if conv == "ω1ω3"
         cs  = contourf(ω,ω,data,lvls,cmap=create_colormap()); colorbar();
         if repr == "phase"
@@ -100,8 +106,7 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
         else
             cs2 = contour(cs,levels=cs.levels[:],colors="gray",linewidths=(.5,))
         end
-        xlabel("detection (ω₃)"); ylabel("excitation (ω₁)"); #clim([m, M]);
-        
+        xlabel("detection (ω₃)"); ylabel("excitation (ω₁)"); #clim([m, M]);  
     elseif conv == "ω3ω1"
         cs  = contourf(ω,ω,transpose(data),lvls,cmap=cmp);
         if repr == "phase"
@@ -111,26 +116,47 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
         end
         xlabel("excitation (ω₁)"); ylabel("detection (ω₃)");
     end
+
+    # add colorbar
     cbar = colorbar(cs)
     cbar.add_lines(cs2)
+    # add diagonal line
     plot([ω[1], ω[end]], [ω[1], ω[end]],"k--");
-
-    ## plot positive and negative contourlines with different linestyles
-    #contour(ω,ω,temp.*(temp.>0),lvls[1:1:end],cmap="Greys",
-    #        linewidths=0.5,linestyles="solid");
-    #contour(ω,ω,temp.*(temp.<0),lvls[1:1:end],cmap="Greys",
-    #        linewidths=0.5,linestyles="dashed");
 
 end
 
+"""
+    plot_timeTrace(dat2d,T,ω,w1,w3)
+
+Plots a time trace in T from a set of 2D spectra.
+
+# Arguments
+- dat2d:    2D dataset
+- T:        evolution time
+- ω:        frequency / energy axis
+- w1, w3:   combination of excitation and detection frequency to plot. 
+            Can be a list of values.
+
+# Example
+
+tbd
+
+"""
 function plot_timeTrace(dat2d,T,ω,w1,w3)
+    
+    ## create the figure
     figure(figsize=(8.5,3.5))
+
+    ## plot 2D map
     subplot(121)
     plot2d(ω,dat2d[1])
     for i in 1:length(w1)
         plot(w1[i],w3[i],"o",fillstyle="none",mew=3,ms=10,marker="s")
     end
+    
+    ## plot time trace
     subplot(122)
+    # get indices from (lists) w1 and w3
     idx1 = [argmin(abs.(ω .- i)) for i in w1]
     idx3 = [argmin(abs.(ω .- i)) for i in w3]
     for j in 1:length(idx1)
@@ -140,6 +166,8 @@ function plot_timeTrace(dat2d,T,ω,w1,w3)
     xlabel("Time"); ylabel("Intensity at w1;w3")
     legend()
     tight_layout()
+
+    ##TODO: slider to flip through 2D spectra
     #sel = slider(1:length(dat2d))
     #w = Window()
     #Interact.@on 
@@ -159,17 +187,23 @@ data.
 
 # Example
 ```julia
-    cmds.save_2d([out2d[i].full2d for i = 1:length(T)],T,fn)
+    save_2d([out2d[i].full2d for i = 1:length(T)],T,fn)
 ```
 """
 function save_2d(spec2d,T,fn_base)
+
+    ## check if directory exists
     if isdir(fn_base)
-        """ nothing """
+        # do nothing
     else
         mkdir(fn_base)
     end
+
+    ## save data
+    # write T and ω to files
     writedlm(fn_base * "T_steps.dat"    , T, ',')
     writedlm(fn_base * "energy_axis.dat", spec2d[1].ω, ',')
+    # save different representations of 2D spectra
     for i = 1:length(T)
         fn = fn_base * @sprintf("2Dspec_%03i.dat",i)
         writedlm(fn, round.(real.(spec2d[i].full2d), digits=2), ',')
@@ -184,12 +218,19 @@ function save_2d(spec2d,T,fn_base)
     println("\nFiles saved!")
 end
 
+"""
+save as .h5 instead
+
+"""
 function save_2d(spec2d,T,fn_base,type)
+
+    ## check if directory exists
     if isdir(fn_base)
-        """ nothing """
+        # do nothing
     else
         mkdir(fn_base)
     end
+
     #TODO: correctly save struct to .h5
     fn = fn_base * "2Dspec.h5"
     h5open(fn, "w") do file
@@ -203,7 +244,7 @@ function save_2d(spec2d,T,fn_base,type)
 end
 
 """
-    load 2D spectra
+Loads a 2D spectrum.
 """
 function load_2d(fn_base;type="full")
     #
@@ -230,8 +271,10 @@ dt   : time steps between subplots
 
 """
 function view_dm_evo(rhot,dt)
+
+    ## create a figure
     figure()
-    for i = 1:12
+    for i = 1:12 # limit to 12 subplots
         subplot(3,4,i,aspect="equal")
         j = (i-1) * dt + 1
         pcolormesh(real(rhot[j].data),cmap="seismic"); clim([-1,1]);
@@ -242,8 +285,16 @@ function view_dm_evo(rhot,dt)
     tight_layout()
 end
 
-## return a random sample from a normal (Gaussian) distribution
-# https://www.johndcook.com/blog/services-2/
+"""
+    rand_normal(mean, stdev)
+
+Return a random sample from a normal (Gaussian) distribution. See
+https://www.johndcook.com/blog/services-2/
+
+Can be useful for simulating the effect of random processes on the
+2D spectra.
+
+"""
 function rand_normal(mean, stdev)
     if stdev <= 0.0
         error("standard deviation must be positive")
@@ -276,7 +327,7 @@ function create_colormap(scheme="bright")
     elseif scheme == "dark"
         Z = RGB(.23,.23,.23);
     else
-        error("cmds -- no colormap scheme selected")
+        error("MultidimensionalSpectroscopy.jl -- No colormap scheme selected!")
     end
 
     return cmp  = ColorMap("cmps",[MMM,MM,M,Z,P,PP,PPP]);
@@ -291,7 +342,7 @@ to increase frequency/energy resolution in the spectral domain (i.e. after Fouri
 transform).
 
 # Arguments
-* 'dat' : correalation data (1D or 2D)
+* 'dat' : correlation data (1D or 2D)
 * 'N'   : data will be zeropadded up to 2^N, if N = 0 return input data
 
 """
@@ -375,6 +426,8 @@ end
 Structure that stores the output of "make2Dspectra"
 
 # Elements:
+* 'ω'           : energy or frequency axis
+* 'T'           : evolution time step
 * 'full2d'      : complex 2D spectrum, take real() or imag() to get absorptive
                   or refractive 2D spectrum
 * 'full2d_r'    : rephasing complex 2D spectrum
@@ -382,6 +435,9 @@ Structure that stores the output of "make2Dspectra"
 * 'gsb'         : complex 2D spectrum with only GSB pathways
 * 'se'          : complex 2D spectrum with only SE pathways
 * 'esa'         : complex 2D spectrum with only ESA pathways
+* '..._r'       : rephasing part
+* '..._nr'      : non-rephasing part
+* 'corr'        : correlation map (in t1 and t3)
 """
 mutable struct out2d{T}
     ω
