@@ -654,8 +654,8 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
                             "NR_esa",method,false; t2coh=t2coh) for i in 1:N) ./ N
     corr_func_R_esa  = sum(correlations(tlist,rho0_bi,H_bi[i],F_bi,μ12_bi,μ23_bi,T,
                             "R_esa", method,false; t2coh=t2coh) for i in 1:N) ./ N
-    #rhots_NR_esa = rhots_NR_esa - conj(rhots_NR_esa)
-    #rhots_R_esa  = rhots_R_esa  - conj(rhots_R_esa)
+
+    # use lineshape function if test == true
     if test
         corr_func_NR_esa = corr_func_NR_esa .* (exp.(-gτ_(-tlist)) * exp.(-gt_(-tlist))')
         corr_func_R_esa  = corr_func_R_esa  .* (exp.(-gτ_( tlist)) * exp.(-gt_( tlist))')
@@ -666,6 +666,8 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
                                 "NR_esax",method,false; t2coh=t2coh) for i in 1:N) ./ N
     corr_func_R_esax  = sum(correlations(tlist,rho0_bi,H_bi[i],F_bi,μ12_bi,μ23_bi,T,
                                 "R_esax", method,false; t2coh=t2coh) for i in 1:N) ./ N
+    
+    # use lineshape function if test == true
     if test
         corr_func_NR_esax = corr_func_NR_esax .* (exp.(-gτ_(-tlist)) * exp.(-gt_(-tlist))')
         corr_func_R_esax  = corr_func_R_esax  .* (exp.(-gτ_( tlist)) * exp.(-gt_( tlist))')
@@ -683,8 +685,8 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
                             "NR_gsb",method,false; t2coh=t2coh) for i in 1:N) ./ N
     corr_func_R_gsb  = sum(correlations(tlist,rho0_si,H_si[i],F_si,μ12_si,μ23_si,T,
                             "R_gsb", method,false; t2coh=t2coh) for i in 1:N) ./ N
-    #rhots_NR_gsb = rhots_NR_gsb - conj(rhots_NR_gsb)
-    #rhots_R_gsb  = rhots_R_gsb  - conj(rhots_R_gsb)
+    
+    # use lineshape function if test == true
     if test
         corr_func_NR_gsb = corr_func_NR_gsb .* (exp.(-gτ_(-tlist)) * exp.(-gt_(-tlist))')
         corr_func_R_gsb  = corr_func_R_gsb  .* (exp.(-gτ_( tlist)) * exp.(-gt_( tlist))')
@@ -695,24 +697,27 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
                             "NR_se",method,false; t2coh=t2coh) for i in 1:N) ./ N
     corr_func_R_se  = sum(correlations(tlist,rho0_si,H_si[i],F_si,μ12_si,μ23_si,T,
                             "R_se", method,false; t2coh=t2coh) for i in 1:N) ./ N
-    #rhots_NR_se = rhots_NR_se - conj(rhots_NR_se)
-    #rhots_R_se  = rhots_R_se  - conj(rhots_R_se)
+    
+    # use lineshape function if test == true
     if test
         corr_func_NR_se = corr_func_NR_se .* (exp.(-gτ_(-tlist)) * exp.(-gt_(-tlist))')
         corr_func_R_se  = corr_func_R_se  .* (exp.(-gτ_( tlist)) * exp.(-gt_( tlist))')
     end
 
-    use_alt = false # use alternative way of calculating signal
+    # use alternative way of calculating signal
+    # was used for testing correct calculation of full 2D signals from components
+    use_alt = false 
 
+    # calculate 2D spectrum by adding time-domain (t1,t3) coherence maps
     if use_alt
-    
+        # combine coherences into going from neg to pos t1
         corr_gsb = hcat(reverse(corr_func_R_gsb,dims=2), corr_func_NR_gsb[:,2:end])
         corr_se  = hcat(reverse(corr_func_R_se,dims=2),  corr_func_NR_se[:,2:end])
         corr_esa = hcat(reverse(corr_func_R_esa,dims=2), corr_func_NR_esa[:,2:end])
         corr_esax = hcat(reverse(corr_func_R_esax,dims=2),corr_func_NR_esax[:,2:end])
-
+        # add components
         corr = corr_gsb + corr_se - corr_esa - corr_esax
-
+        # convert to 2D spectra
         spec2dd        = corr2spec(corr, zp)
         spec2dd_gsb    = corr2spec(corr_gsb, zp)
         #spec2dd_R_gsb  = fft(corr_func_R_gsb)
@@ -735,12 +740,13 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
         #spec2d_R_esax  = []
 
     else
-
+        # define corr=[] in case
         corr = []
 
     end
     
-        # divide first value by .5 (see Hamm and Zanni)
+        # divide first value by .5 (see Hamm and Zanni, section 9.5.3 
+        # Fourier transform, "http://2d-ir-spectroscopy.com/".)
         corr_func_NR_gsb[1,:] = corr_func_NR_gsb[1,:] / 2
         corr_func_NR_gsb[:,1] = corr_func_NR_gsb[:,1] / 2
         corr_func_R_gsb[1,:]  = corr_func_NR_gsb[1,:] / 2
@@ -807,8 +813,6 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
         spec2d_R_esa  = circshift(reverse(spec2d_R_esa ,dims=1),(1,0))
         spec2d_R_esax = circshift(reverse(spec2d_R_esax ,dims=1),(1,0))
 
-    
-
     # calculate the absorptive spectrum of GSB, ESA, and SE
     spec2d_gsb  = spec2d_NR_gsb  + spec2d_R_gsb
     spec2d_se   = spec2d_NR_se   + spec2d_R_se
@@ -836,7 +840,7 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
 
     println("done\n")
 
-    #tlist = [tlist; tlist[2:end] .+ tlist[end]]
+    #tlist = [tlist; tlist[2:end] .+ tlist[end]] # BUG: has to do with alternative way of calculating 2D signal
     tlist, ω = interpt(tlist,zp)
 
     # could return corr for looking at it ... set [] to save space
@@ -857,7 +861,6 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
                                      spec2d_R_esa, spec2d_NR_esa, corr)
     end
 
-    #out = crop2d(out,1;w_max=10,step=1) 
     out = round2d(out,2)
 
     return out
