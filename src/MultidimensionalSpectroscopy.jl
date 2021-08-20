@@ -1032,7 +1032,7 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
         elseif method == "redfield"
             timeevolution.master_bloch_redfield(A,B,D,C)
         else
-            error("cmds -- No valid method selected")
+            error("MultidimensionalSpectroscopy.jl(correlations) -- No valid method selected!")
         end
 
     ## add functionality to vary T
@@ -1056,7 +1056,7 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
         #rho1_cc = rho0 * μ_ge
         #rho1_cc = rho0 * tri(μ_ge,"U")
     else
-        error("cmds -- no pathway selected")
+        error("MultidimensionalSpectroscopy.jl(correlations) -- No pathway selected!")
     end
 
     # define transition dipole operator to evaluate expectation value
@@ -1386,9 +1386,18 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
 end
 
 """
-    ω, corr, spec
+    ω, corr, spec = absorptionSpectrum(t, rho, H, F, μ; zp=11)
 
 Quick function to calculate absorption spectrum.
+
+# Arguments
+* 't'   :
+* 'rho' :
+* 'H'   :
+* 'F'   :
+* 'μ'   :
+* 'zp'  :
+
 """
 function absorptionSpectrum(t, rho, H, F, μ; zp=11)
 
@@ -1422,8 +1431,8 @@ end
 
 Plots GSB, SE and ESA component of 2D spectrum.
 
-#Arguments
-* data  : data struct for single time step T (e.g. out2d[1])
+# Arguments
+* 'data'  : data struct for single time step T (e.g. out2d[1])
 
 """
 function plot2d_comps(data)
@@ -1461,13 +1470,13 @@ function pretty_show_mat(data)
 end
 
 """
-    function vib_analysis(data)
+    vib_analysis(data)
 
 Used to quickly plot GSB, SE and ESA rephasing (R) and non-rephasing (NR) spectra. Useful for checking
 for beating patterns, but could also be used to look at individual components of "normal" 2D dataset.
 
 # Arguments
-* 'data'   : just the 2D as (e.g. out2d[1])
+* 'data'   : just the 2D data structure as (e.g. out2d[1])
 """
 function vib_analysis(data;norm=0)
      fig, ax = subplots(3,2,sharex=true,sharey=true,figsize=(2*3.2,2.5*3))
