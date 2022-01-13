@@ -4,6 +4,7 @@
 # Ignore Logs
 #logs
 #*.log
+/examples/03_systems_coupled_to_a_cavity/logs
 
 # Ignore the build directory
 #/dist
@@ -19,3 +20,6 @@
 #.idea/
 .vscode/
 #*.sw*
+
+# Ignore backup src code
+src/backup_code.jl

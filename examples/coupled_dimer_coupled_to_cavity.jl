@@ -1,25 +1,15 @@
-#!/usr/bin/julia
-using PyPlot, QuantumOptics, LinearAlgebra, FFTW, Colors,
-        Printf, DelimitedFiles
+using MultidimensionalSpectroscopy, PyPlot, QuantumOptics, LinearAlgebra, FFTW, Colors,
+        Printf, DelimitedFiles, Random
 
 # make sure to set script directory as pwd()
 cd(@__DIR__)
-
-# include my custom cmds module
-if Sys.iswindows()
-    include("..\\cmds.jl")
-    fn = "01_Output\\"
-else
-    include("../cmds.jl")
-    fn = "01_Output/"
-end
 
 # to use PyPlot in GUI mode under Linux
 pygui(true)
 # run once with calc_2d = false to initialize functions
 calc_2d = true
 
-cmp = cmds.create_colormap("bright");
+cmp = create_colormap("bright");
 
 function draw_dipole(x,y,α,d)
     quiver(x- d/2*cos(α), y - d/2*sin(α), d*cos(α), d*sin(α), angles="xy",
@@ -258,8 +248,8 @@ corr = timecorrelations.correlation(tlist, rho0, H, L, μ12, μ12)
 
 ## zeropad corr and extrapolate tlist
 zp = 0
-corr = cmds.zeropad(corr,zp)
-tnew, ~ = cmds.interpt(tlist,zp)
+corr    = zeropad(corr,zp)
+tnew, ~ = interpt(tlist,zp)
 ω,spec = timecorrelations.correlation2spectrum(tnew, corr; normalize_spec=true)
 
 ## add the results to previous figure
@@ -328,8 +318,8 @@ tout, rhot = timeevolution.master_bloch_redfield(tlist,μ12*rho0,R,H)
 corr = expect(μ,rhot)
 
 zp = 11
-corr = cmds.zeropad(corr,zp)
-tnew, ~ = cmds.interpt(tout,zp)
+corr    = zeropad(corr,zp)
+tnew, ~ = interpt(tout,zp)
 
 #subplot(336)
 ax4.plot(tnew,real(corr),"g",linewidth=1,label="RF")
@@ -373,17 +363,21 @@ if calc_2d
         zp = 11 # zeropad up to 2^zp
 
         ## calculate 2D spectra at
-        T = [0,20] #fs
+        T = [0] #fs
 
-        out2d = Array{cmds.out2d}(undef, length(T))
+        spectra2d = Array{out2d}(undef, length(T))
 
         Threads.@threads for i = 1:length(T)
-            out2d[i] = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
+            spectra2d[i] = make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
                                                 method;debug=true,use_sub=use_sub,zp=zp);
         end
 
         ## crop 2D data and increase dw
-        out2d = [cmds.crop2d(out2d[i],1.3;w_max=3.5,step=1) for i = 1:length(T)]
+        spectra2d = [crop2d(spectra2d[i],1.3;w_max=3.5,step=1) for i = 1:length(T)]
+
+    end
+
+    if calc_2d
 
         ## plot 2D spectra for each(?) T
         # what to plot
@@ -396,7 +390,7 @@ if calc_2d
         nrows = Int32(ceil(nplots / ncols));
 
         # determine maximum value in dataset out2d[:].full2d[:,:]
-        maxi = maximum([maximum(real(out2d[i].full2d)) for i in 1:length(out2d)])
+        maxi = maximum([maximum(real(spectra2d[i].full2d)) for i in 1:length(spectra2d)])
 
         # plot 2D spectra
         fig, ax = subplots(nrows,ncols,sharex=true,sharey=true,figsize=(ncols*3.2,nrows*3),squeeze=false)
@@ -410,7 +404,7 @@ if calc_2d
                 end
                 sca(ax[k])
                 ax[k].set_aspect = "equal"
-                cmds.plot2d(out2d[k].ω,round.(out2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
+                plot2d(spectra2d[k].ω,round.(spectra2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
                 ax[k].set_title("2D spectrum at $(T[k]) fs")
             end
         end
@@ -418,7 +412,7 @@ if calc_2d
         subplots_adjust(top=0.88)
         
 
-        ω = out2d[1].ω
+        ω = spectra2d[1].ω
         ## plot additional things, like energy levels of states
         plot([E₁, E₁], [ω[1], ω[end]],"k--",linewidth=1,alpha=0.25)
         plot([E₂, E₂], [ω[1], ω[end]],"k--",linewidth=1,alpha=0.25)
@@ -428,11 +422,11 @@ if calc_2d
         plot([ω[1], ω[end]],[energies[2:3], energies[2:3]],"g--",linewidth=1,alpha=0.25)
 
         ## Save data
-        cmds.save_2d([round.(real(out2d[i].full2d),digits=1) for i = 1:length(T)],T,fn)
+        #save_2d([round.(real(out2d[i].full2d),digits=1) for i = 1:length(T)],T,fn)
 
         ## plot TA (summed 2D spectrum)
         figure()
-        ta = [sum(real(out2d[i].full2d),dims=1) for i in 1:length(out2d)] ./ length(out2d)
+        ta = [sum(real(spectra2d[i].full2d),dims=1) for i in 1:length(spectra2d)] ./ length(spectra2d)
         plot(ω,vcat(ta...)')
         plot(ω,zeros(size(ω)),linestyle = "dashed")
         xlabel("Energy/frequency")

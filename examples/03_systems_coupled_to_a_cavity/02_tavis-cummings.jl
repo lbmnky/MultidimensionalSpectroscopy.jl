@@ -6,7 +6,7 @@ cd(@__DIR__)
 
 pygui(true)
 
-calc_2d = true
+calc_2d = false
 
 cmp = create_colormap("bright");
 
@@ -14,17 +14,18 @@ cmp = create_colormap("bright");
 # https://qudev.phys.ethz.ch/static/content/science/papers/Fink2008.pdf
 
 ωr = 4
-Na = 1               # number of cavity fock states
+Na = 2               # number of cavity fock states
 A  = FockBasis(Na)
 a  = destroy(A)
 at = create(A)
 
 
 ωa = 4.1
-Nσ = 2              # number of levels of matter
+Nσ = 3              # number of levels of matter
 Σ  = NLevelBasis(Nσ)
 sm  = transition(Σ, 1, 2)
 sp = transition(Σ, 2, 1)
+
 sz = sp * sm
 
 H_r = (ωr * at * a)
@@ -280,4 +281,3 @@ na = real(expect(sp * sm, rhot))
 
 figure(figsize=(6,3))
 plot(tout,nc)
-"""

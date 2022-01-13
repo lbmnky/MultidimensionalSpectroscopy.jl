@@ -1,22 +1,19 @@
-#!/usr/bin/julia
-using PyPlot, QuantumOptics, LinearAlgebra, Random, Combinatorics, Distributions
+using MultidimensionalSpectroscopy, PyPlot, QuantumOptics, LinearAlgebra, FFTW, Colors,
+        Printf, DelimitedFiles, Random, Combinatorics, Distributions
+
 # make sure to set script directory as pwd()
 cd(@__DIR__)
-# include my custom cmds module, OS dependent (missing IOS)
-if Sys.iswindows()
-    include("..\\cmds.jl");
-    fn = "01_Output"
-else
-    include("../cmds.jl");
-    fn = "01_Output"
-end;
+
 # plot in gui instead of side panel
 pygui(true)
+
 # set different options
 calc_2d = true
 use_sub = true
+
 # set colormap from cmds module
-cmp = cmds.create_colormap("bright");
+cmp = create_colormap("bright");
+
 ## start actual problem
 # CAVITY MODE (not used so far)
 ωr  = 4
@@ -27,14 +24,14 @@ at  = create(A)
 H_r = (ωr * at * a)
 
 # set number of two-level systems to be used
-num_of_TLSs = 2
+num_of_TLSs = 3
 # SINGLE TLS parameters
 ω_TLS  = 5                              # Energy
 N_TLS  = 2                              # number of states (GS, 1st ES, ...)
 b_TLS  = NLevelBasis(N_TLS)             # basis
 sm     = transition(b_TLS, 1, 2)        # σ- transition 2-->1
 sp     = transition(b_TLS, 2, 1)        # σ+ transition 2<--1
-sz     = sp * sm                        # number operator
+sz     = sp * sm                        # "number" operator
 H_TLS = (ω_TLS * sz)                    # Hamiltonian for single TLS
 
 # background for embedding operation: https://docs.qojulia.org/tutorial/ search embed()
@@ -43,6 +40,7 @@ H_TLS = (ω_TLS * sz)                    # Hamiltonian for single TLS
 B_TLSs = b_TLS^num_of_TLSs # creates a composite basis (alt.: CompositeBasis(repeat([b_TLS],num_of_TLSs)...))
 
 # σ- and σ+ in composite basis
+# Sm = sm ⊗ one(sm) ⊗ one(sm) ⊗ ... + one(sm) ⊗ sm ⊗ one(sm) ⊗ ... + one(sm) ⊗ one(sm) ⊗ sm ⊗ ... + ...
 Sm = +([tensor(circshift(append!([sm],repeat([one(sm)],num_of_TLSs-1)),i-1)...) for i in 1:num_of_TLSs]...)
 Sp = dagger(Sm)
 
@@ -66,7 +64,7 @@ L = .1 * [tensor(circshift(append!([sm],repeat([temp],num_of_TLSs-1)),i-1)...) f
 K = .4 * [tensor(circshift(append!([sm,sp],repeat([one(temp)],num_of_TLSs-2)),i-1)...) for i in 1:num_of_TLSs+1]
 
 # coupling between TLS i and i+2
-append!(L,K)
+#append!(L,K)
 #j_ops = [tensor(circshift(append!([sm],[j*one(sm) for j in 1:num_of_TLSs-1 ]),i-1)...) for i in 1:num_of_TLSs]
 
 #j_ops_b = 1. * [tensor(circshift(append!([sp,sm],repeat([temp],num_of_TLSs-2)),i-1)...) for i in 1:num_of_TLSs]
@@ -84,6 +82,8 @@ append!(L,K)
 
 # transition dipole operators
 # transitions from GS
+# μ12 = sm ⊗ (sm*sp) ⊗ (sm*sp) ⊗ ... + (sm*sp) ⊗ sm ⊗ (sm*sp) ⊗ ... + ...
+# μ12 = Σᵢ σ⁻ᵢ ??????
 μ12   = +([tensor(circshift(push!([sm],repeat([sm*sp],num_of_TLSs-1)...),i-1)...) for i in 1:num_of_TLSs]...)
 # normalize μ12, such that tr(rho1) = 1
 μ12   = (μ12 + dagger(μ12)) / sqrt(num_of_TLSs)
@@ -171,14 +171,15 @@ rho2 =  μ23 *  rho1 * μ23
 figure(figsize=(4,4));
 #imshow(real(rho1.data),origin="lower",cmap="Blues")
 pcolormesh(real(rho1.data),edgecolor="k",cmap="Blues",linewidth=".5")
-tlist = [0:0.3:100;]
+tlist = [0:0.3:150;]
 
 Γ     = [.3] #.1 * [.1,.6]
 #L = Γ .* L
 
 # master equation time evolution
 tout, rhot = timeevolution.master(tlist,rho1,H,L);#;rates=Γ);
-cmds.view_dm_evo(rhot,5)
+
+view_dm_evo(rhot,5)
 
 n_gs = real(expect(rho0, rhot))
 n_es = real(expect(rho1, rhot))
@@ -193,12 +194,12 @@ legend(leg)
 leg = []
 subplot(122)
 for i in 1:num_of_TLSs
-    n_es = real(expect(dm(eivecs[i]),rhot))
+    local n_es = real(expect(dm(eivecs[i]),rhot))
     plot(tout,n_es); append!(leg,[string(i)])
 end
 legend(leg)
 
-rhotest = cmds.tri(cmds.tri(rho1,"U"),"L")
+rhotest = tri(tri(rho1,"U"),"L")
 rhotest = rho1
 rhotest.data .= 0
 rhotest.data[2,2] = 1
@@ -220,12 +221,37 @@ ax2 = subplot(212);
 plot(ω, spec)
 
 # Redfield
-ωC = 1; S = 0.1; γ1 = 10
-function noise_power(ω)
+
+τc = 60
+Λ = 1/τc
+λ = 1
+
+#  Ohmic  exponentially  cutoffspectral density
+ωc = 0.01860 * 100
+λ  = 0.00434 * 100
+ω0 = .3
+width = .1
+
+G = 1
+LL = .2
+
+
+try
+    m = @which spectral_density(1)
+    Base.delete_method(m)   
+catch
+end
+function spectral_density(ω)
     if ω == 0.0
         return 0
     else
-        return 1 / π * γ1 * ωC ./ (ω.^2 .+ ωC^2)
+        w = (ω .- ω0) ./ (.5 * width)
+        return abs.(λ * 2 * Λ * ω ./ (ω.^2 .+ Λ^2)) .+ .1 ./ (1 .+ (w).^2)
+        #return abs.(λ * 2 * Λ * ω ./ (ω.^2 .+ Λ^2))
+        #return .1 ./ (1 .+ w.^2)
+        #return abs.(λ .* ω .+ .1 ./ (1 .+ (w).^2))
+        #return abs.(λ / ωc * ω .* exp.(-ω ./ ωc))       #  Ohmic  exponentially  cutoffspectral density: λ reorganization energy, ωc cutoff frequency 
+        #return abs.(LL .* ω .* G) #./ (G^2 .+ w.^2)
     end
 end
 test = Sm*Sp
@@ -237,33 +263,35 @@ test.data = tril(triu(test.data))
 #a_ops = [[10 * j_ops_b[i] * j_ops_b[i]', noise_power] for i in 1:length(j_ops_b)];
 #a_ops = []
 
-a_ops = [1/3 * tensor(circshift(append!([sm*sp],repeat([one(b_TLS)],num_of_TLSs-1)),i)...) for i in 1:num_of_TLSs]
-
+#a_ops = [1/3 * tensor(circshift(append!([sm*sp],repeat([one(b_TLS)],num_of_TLSs-1)),i)...) for i in 1:num_of_TLSs]
+a_ops = [Sp * Sm, spectral_density]
 
 temp2 = []
 for i = 1:length(K)
     println(i)
     append!(temp2,[.3 * (K[i] + dagger(K[i]))])
-    append!(temp2,[noise_power])
+    append!(temp2,[spectral_density])
 end
 
 S = temp2
 
-
+w = collect(0:.01:10)
+figure()
+plot(w, spectral_density(w))
 ## Here, the TLSs are not coupled to each other. S describes the energy transfer
 #  between TLSs and L describes the decay of each individual TLS to the ground
 #  state. Thus S must be an off-diagonal element connecting two diagonal
 #  populations (between two TLSs) and L is off-diagonal between each TLS and the
 #  ground state.
 #R, ekets = timeevolution.bloch_redfield_tensor(H, a_ops, J=0.1 .* append!(j_ops_b,j_ops_c))
-R, ekets = timeevolution.bloch_redfield_tensor(H, [S], J= .3 .* L)
+R, ekets = timeevolution.bloch_redfield_tensor(H, [a_ops], J= .03 .* L)
 
 tout, rhot = timeevolution.master_bloch_redfield(tlist,μ12*rho0,R,H);
 corr = expect(μ12,rhot);
 
 zp = 11
-corr = cmds.zeropad(corr,zp)
-tnew, ~ = cmds.interpt(tout,zp)
+corr    = zeropad(corr,zp)
+tnew, ~ = interpt(tout,zp)
 
 ω,spec = timecorrelations.correlation2spectrum(tnew, corr; normalize_spec=true)
 
@@ -288,7 +316,7 @@ legend(leg)
 leg = []
 subplot(122)
 for i in 1:length(eivecs)
-    n_es = real(expect(dm(eivecs[i]),rhot))
+    local n_es = real(expect(dm(eivecs[i]),rhot))
     plot(tout,n_es); append!(leg,[string(i)])
     ylim(0, 1)
 end
@@ -306,7 +334,7 @@ elseif method == "redfield"
     F = R
     use_sub = false
 end
-#calc_2d = false
+
 if calc_2d
     ## calculate (complex) 3rd order corr function (with T=0)
     zp = 10 # zeropad up to 2^zp
@@ -314,22 +342,25 @@ if calc_2d
     ## calculate 2D spectra at
     T = [0, 15] #fs
 
-    out2d = Array{cmds.out2d}(undef, length(T))
+    spectra2d = Array{out2d}(undef, length(T))
 
     # cannot plot inside cmds.jl when multithreading
     #for i = 1:length(T)
     # multithreading (run several T steps in parallel)!
     Threads.@threads for i = 1:length(T)
-        out2d[i] = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
+        spectra2d[i] = make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
                                             method;debug=true,use_sub=use_sub,
                                                 zp=zp)
     end
 
     ## crop 2D data and increase dw
-    out2d = [cmds.crop2d(out2d[i],4;w_max=6,step=1) for i = 1:length(T)]
+    spectra2d = [crop2d(spectra2d[i],4;w_max=6,step=1) for i = 1:length(T)]
 
     ## assign ω-axis from output
     #ω = out2d[1].ω
+end
+
+if calc_2d
 
     ## plot 2D spectra for each(?) T
     # what to plot
@@ -352,7 +383,7 @@ if calc_2d
     #end
 
     # determine maximum value in dataset out2d[:].full2d[:,:]
-    maxi = maximum([maximum(real(out2d[i].full2d)) for i in 1:length(out2d)])
+    maxi = maximum([maximum(real(spectra2d[i].full2d)) for i in 1:length(spectra2d)])
 
     # plot 2D spectra
     fig, ax = subplots(nrows,ncols,sharex=true,sharey=true,figsize=(ncols*3.2,nrows*3))
@@ -366,9 +397,8 @@ if calc_2d
                 continue
             end
             ax[i,j].set_aspect="equal"
-            cmds.plot2d(out2d[k].ω,round.(out2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
+            plot2d(spectra2d[k].ω,round.(spectra2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
             title("2D spectrum at $(T[k]) fs")
-            colorbar()
         end
     end
     tight_layout()
@@ -376,8 +406,8 @@ if calc_2d
 
     ## plot TA (summed 2D spectrum)
     figure()
-    ta = [sum(out2d[i].full2d,dims=1) for i in 1:length(out2d)]
-    [plot(out2d[1].ω,ta[i]') for i in 1:length(ta)]
+    ta = [sum(spectra2d[i].full2d,dims=1) for i in 1:length(spectra2d)]
+    [plot(spectra2d[1].ω,ta[i]') for i in 1:length(ta)]
 
 end
 
@@ -387,7 +417,7 @@ end
 
 """
 function test_timing()
-    @time H = +([disorder[i] * embed(B_TLSs,i,H_TLS) for i in 1:num_of_TLSs]...);  # works with +, -, *, /
+    @time H = +([disorder[i] * (B_TLSs,i,H_TLS) for i in 1:num_of_TLSs]...);  # works with +, -, *, /
     #@time H = last(accumulate(+, [disorder[i] * embed(B_TLSs,i,H_TLS) for i in 1:num_of_TLSs]));  # works with +, -, *, /
     return H
 end

@@ -8,7 +8,7 @@ cd(@__DIR__)
 pygui(true)
 
 # run once with "calc_2d = false" to initialize functions
-calc_2d = true
+calc_2d = false
 
 cmp = create_colormap("bright");
 ##
@@ -144,9 +144,9 @@ tlist = [0:0.7:400;]
 
 ## make collapse operator #CHECK #TODO: understand better (why ccc?)
 ccc = diagonaloperator(b_mon,[1, 0])
-L1 = one(b_mon) ⊗ j12 # 
+L1 = one(b_mon) ⊗ j12 #
 L1 = ccc⊗j12 # ... ccc don't make sense
-L2 = j12 ⊗ one(b_mon) # 
+L2 = j12 ⊗ one(b_mon) #
 L2=j12⊗ccc
 
 Γ = [sqrt(0.025), sqrt(0.025)]
@@ -170,11 +170,11 @@ L = [sqrt(0.055) * (j21*j12 ⊗  (j12*j21)+ (j12*j21) ⊗  (j21*j12)), Γ[2] * L
 ## Normalize TDM operators #TODO: Is this the best way to do this ?
 rho1 = μ12 * rho0 * μ12
 μ12  = μ12 / sqrt(tr(rho1))
-μ23  = μ23 / sqrt(tr(rho1)) 
+μ23  = μ23 / sqrt(tr(rho1))
 
 rho1 = μ12 * rho0 * μ12
 rho2 = μ23 * rho1 * μ23
-μ23  = μ23 / sqrt(tr(rho2)) 
+μ23  = μ23 / sqrt(tr(rho2))
 rho2 = μ23 * rho1 * μ23
 
 ## calculate magnitude of tdm with singly excited states e1 and e2

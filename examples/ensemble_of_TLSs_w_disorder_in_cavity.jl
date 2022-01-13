@@ -1,17 +1,8 @@
-#!/usr/bin/julia
-using PyPlot, QuantumOptics, LinearAlgebra, Random, Combinatorics, Distributions
+using MultidimensionalSpectroscopy, PyPlot, QuantumOptics, LinearAlgebra, FFTW, Colors,
+        Printf, DelimitedFiles, Random, Combinatorics, Distributions
 
 # make sure to set script directory as pwd()
 cd(@__DIR__)
-
-# include my custom cmds module, OS dependent 
-if Sys.iswindows()
-    include("..\\cmds.jl");
-    fn = "01_Output"
-else
-    include("../cmds.jl");
-    fn = "01_Output"
-end
 
 # plot in gui instead of side panel
 pygui(true)
@@ -21,8 +12,7 @@ calc_2d = true                                          # might be costly
 use_sub = true                                          # can use single and double excitation subspace with lindblad master equation
 
 # set colormap from cmds module
-cmp = cmds.create_colormap("bright");
-
+cmp = create_colormap("bright");
 
 ## start actual problem
 # CAVITY MODE PARAMETERS
@@ -53,7 +43,7 @@ B_TLSs = b_TLS^num_of_TLSs               # creates a composite basis (alt.: Comp
 # generate basis of full system
 B_full = B_TLSs ⊗ A
 
-# #CHECK ??? 
+# #CHECK ???  !! NEED TO GET RID OF ELEMENTS WITH HIGHER EX SECTORS
 cccc  = diagonaloperator(b_TLS,[1,1/2])
 
 # define σ- and σ+ in composite basis #TODO call them Σ for consistency
@@ -129,31 +119,6 @@ g0 = 0.1
 g = g0 * sqrt(num_of_TLSs)
 H = H_en ⊗ one(H_r) + one(H_en) ⊗ H_r + g * (Sm ⊗ at + Sp ⊗ a)
 
-## test to generate subspace #DELETE
-eivecs      = eigvecs(dense(H).data)
-#n_sub       = 1 + length(H.basis_l.bases) + binomial(length(H.basis_l.bases),2)
-#eivecs_sub  = [Ket(B_TLSs,eivecs[:,i]) for i in 1:n_sub]
-#eivecs_sub  = [Ket(B_full,eivecs[:,i]) for i in 1:n_sub]
-
-#b_sub = SubspaceBasis(H.basis_l,eivecs_sub)
-#println("dim(Hilbert space): ", length(B_TLSs))
-#P = sparse(projector(b_sub, H.basis_l))
-#Pt = dagger(P)
-#smm = embed(B_TLSs,1,sm)
-"""
-if use_sub
-    println("dim(subspace): ", length(b_sub))
-    H = P * H * Pt
-    μ12 = P * μ12 * Pt
-    μ23 = P * μ23 * Pt
-    rho0 = P * rho0 * Pt
-    Sm = P * Sm * Pt
-    Sp = P * Sp * Pt
-    smm = P * smm * Pt
-    j_ops = [P * j_ops[i] * Pt for i in 1:num_of_TLSs]
-end
-"""
-
 ## get energies and eigenvectors
 E      = eigvals(dense(H).data)
 eivecs = eigvecs(dense(H).data)
@@ -205,7 +170,7 @@ tlist = [0:0.3:150;]
 
 ## master equation time evolution starting after population transfer into excited state (cavity mode)
 tout, rhot = timeevolution.master(tlist,rho1,H,j_ops);#;rates=Γ);
-cmds.view_dm_evo(rhot,5)
+view_dm_evo(rhot,5)
 # ground and excited state population, time evolution
 n_gs = real(expect(rho0, rhot))
 n_es = real(expect(rho1, rhot))
@@ -221,20 +186,20 @@ leg = []
 # also plot partial population of each TLS and the cavity
 subplot(122)
 for i in 1:length(E) #TODO: distinguish between eigenstates
-    n_es = real(expect(dm(eivecs[i]),rhot))
+    local n_es = real(expect(dm(eivecs[i]),rhot))
     plot(tout,n_es); append!(leg,[string(i)])
 end
 legend(leg)
 
 #DELETE
-rhotest = cmds.tri(cmds.tri(rho1,"U"),"L")
+rhotest = tri(tri(rho1,"U"),"L")
 rhotest = rho1
 rhotest.data .= 0
 rhotest.data[2,2] = 1
 
 ## calculate correlation function
 corr    = timecorrelations.correlation(tlist, rho0, H, j_ops, μ12, μ12)             # for ground state absorption
-#corr    = timecorrelations.correlation(tlist, rho1, H, j_ops, μ23, μ23);           # for excited state (rho1) absorption #CHECK shouldn't work like this yet
+#corr    = timecorrelations.correlation(tlist, rho1, H, j_ops, μ23, μ23);           # for excited state (rho1) absorption #CHECK: shouldn't work like this yet
 
 ## calculate spectrum from correlation function
 ω, spec = timecorrelations.correlation2spectrum(tlist, corr; normalize_spec=true);
@@ -280,19 +245,19 @@ if calc_2d
     T = [5] #fs
 
     # init output array
-    out2d = Array{cmds.out2d}(undef, length(T))
+    spectra2d = Array{out2d}(undef, length(T))
 
     # cannot plot inside cmds.jl when multithreading
     #for i = 1:length(T)
     # multithreading (run several T steps in parallel)!
     Threads.@threads for i = 1:length(T)
-        out2d[i] = cmds.make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
+        spectra2d[i] = make2Dspectra(tlist,rho0,H,F,μ12,μ23,T[i],
                                             method;debug=true,use_sub=false, #TODO! use_sub true and false give different results. For false SE and ESA have sign changes, true looks better
                                                 zp=zp)
     end
 
     ## crop 2D data and increase dw
-    out2d = [cmds.crop2d(out2d[i],4;w_max=6,step=1) for i = 1:length(T)]
+    spectra2d = [crop2d(spectra2d[i],4;w_max=6,step=1) for i = 1:length(T)]
 
     ## plot 2D spectra for each(?) T
     # what to plot
@@ -305,7 +270,7 @@ if calc_2d
     nrows = Int32(ceil(nplots / ncols));
 
     ## determine maximum value in dataset out2d[:].full2d[:,:]
-    maxi = maximum([maximum(real(out2d[i].full2d)) for i in 1:length(out2d)])
+    maxi = maximum([maximum(real(spectra2d[i].full2d)) for i in 1:length(spectra2d)])
 
     ## plot 2D spectra
     fig, ax = subplots(nrows,ncols,sharex=true,sharey=true,figsize=(ncols*3.2,nrows*3))
@@ -322,7 +287,7 @@ if calc_2d
                 continue
             end
             ax[i,j].set_aspect="equal"
-            cmds.plot2d(out2d[k].ω,round.(out2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
+            plot2d(spectra2d[k].ω,round.(spectra2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi)
             title("2D spectrum at $(T[k]) fs")
         end
     end
@@ -331,14 +296,15 @@ if calc_2d
 
     ## plot TA (summed 2D spectrum) #TODO convolute with narrow (pump) laser spectrum
     figure()
-    ta = [sum(real(out2d[i].full2d),dims=1) for i in 1:length(out2d)]
-    [plot(out2d[1].ω,ta[i]') for i in 1:length(ta)]
+    ta = [sum(real(spectra2d[i].full2d),dims=1) for i in 1:length(spectra2d)]
+    [plot(spectra2d[1].ω,ta[i]') for i in 1:length(ta)]
 
 end
 
 
 
 ## #DEBUG How to check execution time (run twice after function assignment!):
+
 #=
 function test_timing()
     @time H = +([disorder[i] * embed(B_TLSs,i,H_TLS) for i in 1:num_of_TLSs]...);  # works with +, -, *, /
@@ -348,107 +314,3 @@ end
 test_timing()
 =#
 
-
-## old code #DELETE
-#=
-
-# How to construct full Hamiltonian
-# http://hitoshi.berkeley.edu/221A/tensorproduct.pdf
-
-H = H_a ⊗ one(H_a) + one(H_a) ⊗ H_a + 0.1 * ((sm⊗sp)+(sp⊗sm))
-
-#H = manybodyoperator(ManyBodyBasis(Σ,bosonstates(Σ,[1,1])),H_a)
-
-
-H = H_a ⊗ one(H_a) ⊗ one(H_a) + one(H_a) ⊗ H_a ⊗ one(H_a) + one(H_a) ⊗ one(H_a) ⊗  H_a + 0.1 * ((sm⊗sp⊗one(sm))+(sp⊗sm⊗one(sm)) + (sm⊗one(sm)⊗sp)+(sp⊗one(sm)⊗sm) + (one(sm)⊗sm⊗sp)+(one(sm)⊗sp⊗sm))
-
-Nm = 3
-
-
-# vector with molecule indices
-R = collect(1:Nm)
-
-for i in R
-    if i == 1
-        H_am = H_a
-        smm = sm
-    else
-        global H_am = H_am ⊗ one(H_a)
-        global smm = smm ⊗ one(H_a)
-    end
-end
-
-spp = dagger(smm)
-
-disorder = zeros(Nm)
-
-for j in R
-    println(circshift(R,j-1))
-    if j == 1
-        disorder[j] = 1
-        global H_amb = H_am
-    else
-        disorder[j] = 1 #+ (rand(Float64, 1)[1] - 0.5) / 20
-        global H_amb = H_amb + disorder[j] * permutesystems(H_am,circshift(R,j-1))
-    end
-end
-
-for i in R
-    if i == 1
-        println(circshift(R,i-1))
-        #global H_x = (one(spp) ⊗ permutesystems(smm,circshift(R,i-1))) +
-        #            one(smm) ⊗ permutesystems(spp,circshift(R,i-1))
-        #global H_x = (sp ⊗ sm) + (sm ⊗ sp)
-                        #one(smm) ⊗ permutesystems(spp,circshift(R,i-1))
-    else
-        #global H_x = H_x + (one(spp) ⊗ permutesystems(smm,circshift(R,i-1))) +
-        #            one(smm) ⊗ permutesystems(spp,circshift(R,i-1))
-        #global H_x = H_x
-    end
-end
-
-H = H_amb + 0.1*H_x
-
-
-
-E = eigvals(dense(H).data)
-xn = 0
-figure(figsize=(5,4));
-title("Energy levels (Eigenvalues) of H_TC")
-#hlines([0, ωr], -.65, -.35)
-hlines([0],  .35,  .65)
-hlines([ωa .* disorder[:]],  .35,  .65)
-for i in 1:length(E)
-    println(i)
-    if i > 1 && E[i] - E[i-1] < 0.1
-        hlines(E[i],-.15,.15)
-        global xn += .02
-    else
-        hlines(E[i],-.15,.15)
-        global xn = 0
-    end
-end
-xlim([-.8, .8])
-
-
-
-
-WAY TO CONSTRUCT THEM ... TOO DIFFICULT
-num_of_exc = 0
-elms = push!(repeat([nlevelstate(b_TLS,2)],num_of_exc),repeat([nlevelstate(b_TLS,1)],num_of_TLSs-num_of_exc)...)
-ground = tensor(elms)
-
-num_of_exc = 1
-elms = push!(repeat([nlevelstate(b_TLS,2)],num_of_exc),repeat([nlevelstate(b_TLS,1)],num_of_TLSs-num_of_exc)...)
-singl = push!([tensor(circshift(elms,i-1)...) for i in 1:num_of_TLSs])
-
-num_of_exc = 2
-elms = push!(repeat([nlevelstate(b_TLS,2)],num_of_exc),repeat([nlevelstate(b_TLS,1)],num_of_TLSs-num_of_exc)...)
-#doubl = push!([tensor(circshift(elms,i-1)...) for i in 1:num_of_TLSs])
-doubl = push!([tensor(unique(permutations(elms))[i]...) for i in 1:binomial(num_of_TLSs,2)])
-
-test = Ket[]
-test = push!(test,ground)
-test = push!(test,singl...)
-test = push!(test,doubl...)
-=#
