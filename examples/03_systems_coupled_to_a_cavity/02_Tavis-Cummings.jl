@@ -281,3 +281,4 @@ na = real(expect(sp * sm, rhot))
 
 figure(figsize=(6,3))
 plot(tout,nc)
+"""

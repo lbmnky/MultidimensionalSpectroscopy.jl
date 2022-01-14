@@ -6,7 +6,7 @@ cd(@__DIR__)
 
 pygui(true)
 
-calc_2d = false
+calc_2d = true
 
 cmp = create_colormap("bright");
 
@@ -14,18 +14,17 @@ cmp = create_colormap("bright");
 # https://qudev.phys.ethz.ch/static/content/science/papers/Fink2008.pdf
 
 ωr = 4
-Na = 2               # number of cavity fock states
+Na = 1               # number of cavity fock states
 A  = FockBasis(Na)
 a  = destroy(A)
 at = create(A)
 
 
 ωa = 4.1
-Nσ = 3              # number of levels of matter
+Nσ = 2              # number of levels of matter
 Σ  = NLevelBasis(Nσ)
 sm  = transition(Σ, 1, 2)
 sp = transition(Σ, 2, 1)
-
 sz = sp * sm
 
 H_r = (ωr * at * a)
@@ -206,7 +205,7 @@ if calc_2d
     end
 
     ## crop 2D data and increase dw
-    spectra2d = [crop2d(spectra2d[i],1;w_max=20,step=2) for i = 1:length(T)]
+    spectra2d = [crop2d(spectra2d[i],2;w_max=7,step=2) for i = 1:length(T)]
 
     ## assign ω-axis from output
     ω = spectra2d[1].ω
@@ -237,7 +236,7 @@ end
 
 #H_TC = H_r ⊗ one(Σ) ⊗ one(Σ) + one(A) ⊗ H_a ⊗ one(Σ)
 
-"""
+#=
 b = NLevelBasis(2)
 H = diagonaloperator(b, [0, 1])
 j12 = transition(b, 1, 2) # decay from 2nd into 1st level
@@ -281,3 +280,4 @@ na = real(expect(sp * sm, rhot))
 
 figure(figsize=(6,3))
 plot(tout,nc)
+=#
