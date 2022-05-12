@@ -13,6 +13,7 @@ Interact = "c601a237-2ae4-5e1e-952c-7a85b0c7eef1"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
 QuantumOptics = "6e0679c1-51ea-5a7c-ac74-d61b76210b0c"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -30,6 +31,7 @@ Revise = "3.1"
 julia = "1.7"
 
 [extras]
+CPUSummary = "2a0fbf3d-bb9c-48f3-b0a9-814d99fd7ab9"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
