@@ -4,7 +4,7 @@ export create_colormap, zeropad, interpt, make2Dspectra, correlations,
         view_dm_evo, save_2d, load_2d, plot2d, crop2d, round2d, tri, absorptionSpectrum, plot2d_comps,
          pretty_show_mat, vib_analysis, create_subspace, rand_normal, plot_levels, logger, out2d, corr2spec
 
-using QuantumOptics, FFTW, LinearAlgebra, PyPlot, Colors, DelimitedFiles, Printf, Random, JLD2, Interact, Blink
+using QuantumOptics, FFTW, LinearAlgebra, Plots, Colors, DelimitedFiles, Printf, Random, JLD2, Interact, Blink
 
 """
     plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin")
@@ -19,7 +19,7 @@ norm_spec : normalize to abs.(maximum(data)), where data is the 2D spectrum to
             be plotted
 scaling   : pick z-scaling ("lin", "tan", "cube", "asinh")
 norm      : if norm == 0 normalize each 2D spectrum individually, else normalize
-            all spectra to norm = <val>, where <val> can be the overall maximum of 
+            all spectra to norm = <val>, where <val> can be the overall maximum of
             the dataset (for all evolution time steps, T)
 
 """
@@ -38,7 +38,7 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
         cmp = create_colormap()
     elseif repr in ["phase", "ph"]
         data_cntl = real(data) ./ maximum(abs.(data))
-        data = atan.(imag(data) ./ real(data)) 
+        data = atan.(imag(data) ./ real(data))
         cmp = "rainbow"
     end
 
@@ -95,7 +95,7 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
     end
 
     ## plot data as filled contour
-    
+
     # choose convention
     conv = "ω3ω1"
 
@@ -106,13 +106,15 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
         else
             cs2 = contour(cs,levels=cs.levels[:],colors="gray",linewidths=(.5,))
         end
-        xlabel("detection (ω₃)"); ylabel("excitation (ω₁)"); #clim([m, M]);  
+        xlabel("detection (ω₃)"); ylabel("excitation (ω₁)"); #clim([m, M]);
     elseif conv == "ω3ω1"
-        cs  = contourf(ω,ω,transpose(data),lvls,cmap=cmp);
+        #cs  = contourf(ω,ω,transpose(data),lvls,cmap=cmp);
+        contourf(ω,ω,transpose(data))
         if repr == "phase"
             cs2 = contour(ω,ω,transpose(data_cntl),lvls,colors="white",linewidths=(.5,))
         else
-            cs2 = contour(cs,levels=cs.levels[:],colors="gray",linewidths=(.5,))
+            #cs2 = contour(cs,levels=cs.levels[:],colors="gray",linewidths=(.5,))
+            #contour(cs,levels=cs.levels[:])
         end
         xlabel("excitation (ω₁)"); ylabel("detection (ω₃)");
     end
@@ -134,7 +136,7 @@ Plots a time trace in T from a set of 2D spectra.
 - dat2d:    2D dataset
 - T:        evolution time
 - ω:        frequency / energy axis
-- w1, w3:   combination of excitation and detection frequency to plot. 
+- w1, w3:   combination of excitation and detection frequency to plot.
             Can be a list of values.
 
 # Example
@@ -143,7 +145,7 @@ tbd
 
 """
 function plot_timeTrace(dat2d,T,ω,w1,w3)
-    
+
     ## create the figure
     figure(figsize=(8.5,3.5))
 
@@ -153,7 +155,7 @@ function plot_timeTrace(dat2d,T,ω,w1,w3)
     for i in 1:length(w1)
         plot(w1[i],w3[i],"o",fillstyle="none",mew=3,ms=10,marker="s")
     end
-    
+
     ## plot time trace
     subplot(122)
     # get indices from (lists) w1 and w3
@@ -170,7 +172,7 @@ function plot_timeTrace(dat2d,T,ω,w1,w3)
     ##TODO: slider to flip through 2D spectra
     #sel = slider(1:length(dat2d))
     #w = Window()
-    #Interact.@on 
+    #Interact.@on
     #body!(w, sel);
 end
 
@@ -330,7 +332,7 @@ function create_colormap(scheme="bright")
         error("MultidimensionalSpectroscopy.jl -- No colormap scheme selected!")
     end
 
-    return cmp  = ColorMap("cmps",[MMM,MM,M,Z,P,PP,PPP]);
+    return cmp  = 0# ColorMap("cmps",[MMM,MM,M,Z,P,PP,PPP]);
 end
 
 
@@ -459,7 +461,7 @@ end
 """
     create_subspace(H, manifold, F, dat...)
 
-Function accepts variable number of arguments (dat) in addition to H and returns tuple 
+Function accepts variable number of arguments (dat) in addition to H and returns tuple
 of said arguments in Eigen basis (exciton basis/polariton basis/...).
 
 # Arguments
@@ -490,7 +492,7 @@ H, ..., dat_a, dat_b, dat_c  = create_subspace(H, ..., dat_a, dat_b, dat_c)
 function create_subspace(H, manifold, dat...)
     Eivecs = eigvecs(dense(H[1]).data)
     L = length(H[1].basis_l.bases)
-    # size of subspace 
+    # size of subspace
     if manifold == "bi"
         n_sub = 1 + L + binomial(L,2)
     elseif manifold == "si"
@@ -517,7 +519,7 @@ end
 function create_subspace(H, manifold, F, dat...)
     Eivecs = eigvecs(dense(H[1]).data)
     L = length(H[1].basis_l.bases)
-    # size of subspace 
+    # size of subspace
     if manifold == "bi"
         #n_sub = 1 + L + binomial(L,2)
         n_sub = collect(1:1+L+binomial(L,2)+4)   #TODO: +1 for 2nd fock state... w/o +1 only true for all TLSs (cavity and matter)
@@ -582,7 +584,7 @@ Hidden is a lineshape function (work in progress).
 """
 function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, use_sub=true, zp=0, t2coh="kin")
 
-    if use_sub 
+    if use_sub
     H_si    = [[pop!(H)]]
     H_bi    = [[pop!(H)]]
     rho0_si = pop!(rho0)
@@ -616,7 +618,7 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     N = 1
     # if !isempty(methods(H))
     #     H = [H(T) for i in 1:N]
-    #     println.(H) 
+    #     println.(H)
     # elseif length(H) == 2
     #     println("L2")
     #     #println(H)
@@ -666,7 +668,7 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
                                 "NR_esax",method,false; t2coh=t2coh) for i in 1:N) ./ N
     corr_func_R_esax  = sum(correlations(tlist,rho0_bi,H_bi[i],F_bi,μ12_bi,μ23_bi,T,
                                 "R_esax", method,false; t2coh=t2coh) for i in 1:N) ./ N
-    
+
     # use lineshape function if test == true
     if test
         corr_func_NR_esax = corr_func_NR_esax .* (exp.(-gτ_(-tlist)) * exp.(-gt_(-tlist))')
@@ -685,7 +687,7 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
                             "NR_gsb",method,false; t2coh=t2coh) for i in 1:N) ./ N
     corr_func_R_gsb  = sum(correlations(tlist,rho0_si,H_si[i],F_si,μ12_si,μ23_si,T,
                             "R_gsb", method,false; t2coh=t2coh) for i in 1:N) ./ N
-    
+
     # use lineshape function if test == true
     if test
         corr_func_NR_gsb = corr_func_NR_gsb .* (exp.(-gτ_(-tlist)) * exp.(-gt_(-tlist))')
@@ -697,7 +699,7 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
                             "NR_se",method,false; t2coh=t2coh) for i in 1:N) ./ N
     corr_func_R_se  = sum(correlations(tlist,rho0_si,H_si[i],F_si,μ12_si,μ23_si,T,
                             "R_se", method,false; t2coh=t2coh) for i in 1:N) ./ N
-    
+
     # use lineshape function if test == true
     if test
         corr_func_NR_se = corr_func_NR_se .* (exp.(-gτ_(-tlist)) * exp.(-gt_(-tlist))')
@@ -706,7 +708,7 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
 
     # use alternative way of calculating signal
     # was used for testing correct calculation of full 2D signals from components
-    use_alt = false 
+    use_alt = false
 
     # calculate 2D spectrum by adding time-domain (t1,t3) coherence maps
     if use_alt
@@ -744,8 +746,8 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
         corr = []
 
     end
-    
-        # divide first value by .5 (see Hamm and Zanni, section 9.5.3 
+
+        # divide first value by .5 (see Hamm and Zanni, section 9.5.3
         # Fourier transform, "http://2d-ir-spectroscopy.com/".)
         corr_func_NR_gsb[1,:] = corr_func_NR_gsb[1,:] / 2
         corr_func_NR_gsb[:,1] = corr_func_NR_gsb[:,1] / 2
@@ -766,20 +768,20 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
         corr_func_NR_esax[:,1] = corr_func_NR_esax[:,1] / 2
         corr_func_R_esax[1,:]  = corr_func_NR_esax[1,:] / 2
         corr_func_R_esax[:,1]  = corr_func_NR_esax[:,1] / 2
-        
+
         # zeropad data prior to fft to increase resolution
         corr_func_NR_gsb = zeropad(corr_func_NR_gsb,zp)
         corr_func_R_gsb  = zeropad(corr_func_R_gsb ,zp)
-        
+
         corr_func_NR_se  = zeropad(corr_func_NR_se,zp)
         corr_func_R_se   = zeropad(corr_func_R_se ,zp)
 
         corr_func_NR_esa = zeropad(corr_func_NR_esa,zp)
         corr_func_R_esa  = zeropad(corr_func_R_esa ,zp)
-        
+
         corr_func_NR_esax = zeropad(corr_func_NR_esax,zp)
         corr_func_R_esax  = zeropad(corr_func_R_esax ,zp)
-        
+
         #######################################################
         ######### plot 2nd order correlation function #########
         #######################################################
@@ -846,7 +848,7 @@ function make2Dspectra(tlist, rho0, H, F, μ12, μ23, T, method; debug=false, us
     # could return corr for looking at it ... set [] to save space
     #corr = []
 
-    #FACT: spec2dd behaves correctly (for coupled dimer) when plotting absorptive, absolute, dispersive and phase // spec2d now as well ! ... 
+    #FACT: spec2dd behaves correctly (for coupled dimer) when plotting absorptive, absolute, dispersive and phase // spec2d now as well ! ...
     #TODO: absl is stretched too much in ω3!
     if use_alt
         #BUG #TODO: So far I need to change tlist and then crop ω when using alternative way of calculating 2D signals
@@ -969,21 +971,21 @@ Calculate the response functions necessary for 2D spectroscopy.
 rephasing:
 ```
 GSB               { μ * [(rho0 * μ)  * μ]}  + cc
-            copy: ( μ * ((rho0 * μ)  * μ))  
-SE                {[μ *  (rho0 * μ)] * μ}   + cc  
-            copy: ((μ *  (rho0 * μ)) * μ)  
-ESA               { μ *  [μ * (rho0  * μ)]} + cc  
-            copy: ( μ *  (μ * (rho0  * μ)))  
+            copy: ( μ * ((rho0 * μ)  * μ))
+SE                {[μ *  (rho0 * μ)] * μ}   + cc
+            copy: ((μ *  (rho0 * μ)) * μ)
+ESA               { μ *  [μ * (rho0  * μ)]} + cc
+            copy: ( μ *  (μ * (rho0  * μ)))
 ```
 
-non-rephasing:  
+non-rephasing:
 ```
-GSB               {μ * [μ * (μ * rho0)]} + cc 
-            copy: (μ * (μ * (μ * rho0)))  
-SE                {[(μ * rho0) * μ] * μ} + cc  
-            copy: (((μ * rho0) * μ) * μ)  
-ESA               {μ * [(μ * rho0) * μ]} + cc  
-            copy: (μ * ((μ * rho0) * μ))  
+GSB               {μ * [μ * (μ * rho0)]} + cc
+            copy: (μ * (μ * (μ * rho0)))
+SE                {[(μ * rho0) * μ] * μ} + cc
+            copy: (((μ * rho0) * μ) * μ)
+ESA               {μ * [(μ * rho0) * μ]} + cc
+            copy: (μ * ((μ * rho0) * μ))
 ```
 """
 function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug; t2coh=false)
@@ -995,7 +997,7 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
             H, μa, μb, rho0, F =  create_subspace(H, μa, μb, rho0, F, "bi")
         elseif pathway[end] == 'b' || pathway[end] == 'e'
             H, μa, μb, rho0, F =  create_subspace(H, μa, μb, rho0, F, "si")
-        else 
+        else
             println("error creating subspace")
         end
     catch
@@ -1036,7 +1038,7 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
         end
 
     ## add functionality to vary T
-    T = [0.:1.:T;]     
+    T = [0.:1.:T;]
 
     # initialize output matrix
     corr    = complex(zeros(length(tlist),length(tlist)))
@@ -1244,7 +1246,7 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
             end
 
             #rho3    = μ_ef * rho2
-            rho3    = tri(μ_ef,"L") * rho2            
+            rho3    = tri(μ_ef,"L") * rho2
         end
 
         # calculate time evolution of ρ during detection time t
@@ -1344,7 +1346,7 @@ function absorptionSpectrum(t, rho, H, F, μ; zp=11)
     return ω, corr, spec
 end
 
-#FACT: tri is required for properly making ... σ⁺ ρ ... (tf does this mean?) 
+#FACT: tri is required for properly making ... σ⁺ ρ ... (tf does this mean?)
 #FACT: deactivate tri for displaced harmonic oscillator
 """
     out = tri(dat, uplo)
@@ -1394,7 +1396,7 @@ function plot2d_comps(data)
     tight_layout()
 end
 
-#TODO: is this useful ? 
+#TODO: is this useful ?
 function pretty_show_mat(data)
     fig, ax = plt.subplots()
     im = ax.imshow(data)
@@ -1440,7 +1442,7 @@ end
 """
     plot_levels(H,center_x;col,ls)
 
-Plots the energy levels of H at position center_x within an axis. Create a figure() first, 
+Plots the energy levels of H at position center_x within an axis. Create a figure() first,
 to plot the energy levels of different systems, subspaces, monomers, etc. together. E.g.
 
 ```julia

@@ -40,15 +40,15 @@ b = NLevelBasis(Nlev)
 Emon = E_monomer
 Emonb = 2 * E_monomer + 0.1
 # not important here, but in general for TDBC aggregates
-# Δ = .299                          # shift monomer -> aggregate 
+# Δ = .299                          # shift monomer -> aggregate
 # J = -Δ / (2 * cos(pi /(N+1)))     # nearest-neighbour coupling constant
 
 # transitions and monomer Hamiltonian
-σ⁺ = transition(b,2,1) 
-σ31 = transition(b,3,1) 
+σ⁺ = transition(b,2,1)
+σ31 = transition(b,3,1)
 σ32 = transition(b,3,2)
-σ⁻ = transition(b,1,2) 
-σ13 = transition(b,1,3) 
+σ⁻ = transition(b,1,2)
+σ13 = transition(b,1,3)
 σ23 = transition(b,2,3)
 H_mon = Emon * σ⁺ * σ⁻ + Emonb * σ31*σ13
 
@@ -64,7 +64,7 @@ B = b^N             # basis for matter part of H
 # random (normal dist) list of energy shifts (factors) scaled arbitrarily by scale. Used to account for static disorder of exciton transition energy
 dE_n = energy_disorder  # from .params file
 
-# keep only factors that increase E_mon, since Frenkel exciton absorption spectrum is not Gaussian but favors high energy side. This could be explained by 
+# keep only factors that increase E_mon, since Frenkel exciton absorption spectrum is not Gaussian but favors high energy side. This could be explained by
 # a maximum delocalisation length resulting in the lowest energy bright state beyond which no longer delocalisation is possible. Shorter delocalisation lengths,
 # due to structural breaks in the exciton or other effecsts, lead to the lowest/bright transition being at higher energies
 # idea1
@@ -77,7 +77,7 @@ dE_n = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] .+ 1
 
 # functions/methods to build matter H and transition operators, by embedding monomer H and σ at site N
 H_n(n)  = embed(B,n,H_mon * dE_n[n]) # Hamiltonian at site n => Hₙ with random, normally distributed energy offset dE
-Σ⁺_n(n) = embed(B,n,σ⁺)              # raising operator at site n 
+Σ⁺_n(n) = embed(B,n,σ⁺)              # raising operator at site n
 Σ⁻_n(n) = embed(B,n,σ⁻)              # lowering operator at site n
 
 # need this workaroud to deal with a single TLS... #BUG
@@ -101,7 +101,7 @@ logger("\nMatter Hamiltonian:\n\n", dense(Hexc), fn_log)
 bcav = FockBasis(N_photonStates)  #FACT: #CHECK need second FockState for ESA !?
 #bcav = FockBasis(1)
 #BUG#TODO: Having 2 photon states messes up transforming between eigen and site basis in subspace
-#IDEA MAYBE I need two 1 photon Fock states ? 
+#IDEA MAYBE I need two 1 photon Fock states ?
 Ecav = E_cavity         # slightly red-tuned from excitonic transition, as main system in paper
 a    = destroy(bcav) # ⊗ one(bcav) + one(bcav) ⊗ destroy(bcav)
 at   = create(bcav)  #⊗ one(bcav) + one(bcav) ⊗ create(bcav)
@@ -113,7 +113,7 @@ At = at ⊗ one(Hexc)
 Σ⁻ = one(a) ⊗ Σ⁻
 Σ⁺n = [one(a) ⊗ Σ⁺n[i] for i in 1:N]
 Σ⁻n = [one(a) ⊗ Σ⁻n[i] for i in 1:N]
- 
+
 # create cavity H
 Hcav = Ecav * at * a
 
@@ -122,7 +122,7 @@ logger("\nCavity Hamiltonian:\n\n", dense(Hcav), fn_log)
 # create basis of complete system
 Bfull = bcav ⊗ B
 
-# create Jaynes/Tavis-Cummings Hamiltonian for light-matter coupling g 
+# create Jaynes/Tavis-Cummings Hamiltonian for light-matter coupling g
 g = 0.15 / sqrt(N)                               # should make splliting independent of N
 #g = 0
 H = embed(Bfull,1,Hcav) + one(Hcav) ⊗ Hexc + g * (Σ⁺ * A + Σ⁻ * At)
@@ -147,7 +147,7 @@ logger("\nOrdered Hamiltonian:\n\n", dense(H), fn_log)
 
 # transition operator
 #μ = Σ⁺ + Σ⁻    # transitions between excitonic states only, #FACT: not possible induced by ext. EM field in cavity, every via optical mode
-μ = At + A #+ At^2 + A^2                                     #FACT: transitions induced by external field 
+μ = At + A #+ At^2 + A^2                                     #FACT: transitions induced by external field
 
 # density matrices
 rho0 = dm(fockstate(bcav,0) ⊗ tensor([nlevelstate(b,1) for i in 1:N]))
@@ -172,13 +172,13 @@ rho1 = μ12 * rho0 * μ12
 #rho1 = μ12 * rho0 * μ12
 rho2 = μ23 * rho1 * μ23
 #μ23 = μ23 / sqrt(tr(rho2))
-#μ23 = μ23 
+#μ23 = μ23
 rho2 = μ23 * rho1 * μ23
 
 # Lindblad dissipation operators
 L1 = A           # FACT: #CHECK only the relaxation channel from single exc. sector to GS is relevant ...
 L2 = Σ⁻          # FACT: actually, having the elements that connect single and double exc. sector seems to ...
-                        # FACT: broaden the ESA peaks (the only signal that considers single and double exc. sectors)                        
+                        # FACT: broaden the ESA peaks (the only signal that considers single and double exc. sectors)
 L3 = .5 * ((At*A) - (A*At)) # not sure if this one is relevant/meaningful/... #CHECK
 
 #L3 = A  - L1
@@ -254,7 +254,7 @@ logger("\nTime list:\n\n", tlist, fn_log)
 
 # Lindblad time evolution
 corr    = timecorrelations.correlation(tlist, rho0_si, H_si, L_si, μ12_si, μ12_si)
-# #TODO: test with varying g ... 
+# #TODO: test with varying g ...
 #corr = sum([timecorrelations.correlation(tlist, rho0_si, Hk(i), L_si, μ12_si, μ12_si) for i in 1:1]) ./ 1
 
 # zeropadding for smoother data only
@@ -283,7 +283,7 @@ width = .005
 # from ... http://www.rsc.org/suppdata/c8/sc/c8sc00171e/c8sc00171e1.pdf
 #ωq_TDBC = [40, 80, 120, 150, 185, 197] ./ 8065 #.* 0.02998 # cm-1 in Hz #./ 8065 # in eV instead
 # => [0.00496 0.00992 0.01488 0.01860  0.02294 0.02443]
-#ampl_TDBC = [14, 18,  25,  43,  42, 67, 60]  
+#ampl_TDBC = [14, 18,  25,  43,  42, 67, 60]
 
 #ωq_TDBC     = [0.0084, 0.0120, 0.1204, 0.1289, 0.1304, 0.1424, 0.303] #FACT: relaxation from UP to LP when ωq_TDBC bridges energy gap between UP and LP. However, no relaxation to dark states ... DUE TO LACK OF COUPLING ????
 ωq_TDBC     = ωq        # from .params file
@@ -297,7 +297,7 @@ logger("Spetral peak width: ", width, fn_log)
 
 try     # need to delete method first when working on it
     local m = @which spectral_density(1)
-    Base.delete_method(m)   
+    Base.delete_method(m)
 catch
 end
 function spectral_density(ω) # power spectral density, thermal bath noise spectrum
@@ -308,7 +308,7 @@ function spectral_density(ω) # power spectral density, thermal bath noise spect
     η = 1
     η = f * γ / (2 * pi * 0.0259)
     ω_cut = .1
-    if ω == 0 
+    if ω == 0
         Jω = .0
     #elseif !isless(real(ω),0)
     #else
@@ -318,12 +318,12 @@ function spectral_density(ω) # power spectral density, thermal bath noise spect
     end
     if  !isless(real(ω),0) && ω != 0
         w = [(ω .- ωq_TDBC[i]) ./ (.5 * width) for i in 1:length(ωq_TDBC)]
-        Jω = sum([ampl_TDBC[i] ./ (1 .+ w[i].^2) for i in 1:length(ωq_TDBC)])  
+        Jω = sum([ampl_TDBC[i] ./ (1 .+ w[i].^2) for i in 1:length(ωq_TDBC)])
         Jω = η * ω * exp(-(ω/ω_cut)^2) + Jω
         Jω = Jω * (1/exp(b *  ω - 1) + 1)
     elseif isless(real(ω),0)
         w = [(ω .- ωq_TDBC[i]) ./ (.5 * width) for i in 1:length(ωq_TDBC)]
-        Jωa = sum([ampl_TDBC[i] ./ (1 .+ w[i].^2) for i in 1:length(ωq_TDBC)]) 
+        Jωa = sum([ampl_TDBC[i] ./ (1 .+ w[i].^2) for i in 1:length(ωq_TDBC)])
         Jω = η * -ω * exp(-(-ω/ω_cut)^2)
         Jω = Jω * (1/exp(b * -ω - 1)) + Jωa
     end
@@ -331,7 +331,7 @@ function spectral_density(ω) # power spectral density, thermal bath noise spect
 
 end
 
-#plot spectral density 
+#plot spectral density
 #figure()
 subplot(212)
 plot(collect(-1:.001:1),(spectral_density.(collect(-1:.001:1))))
@@ -358,8 +358,8 @@ tnew, ~ = interpt(tlist,zp)
 subplot(211)
 plot(ω,spec)
 #FACT: J(0) > 0 induces pure dephasing and leads to broadening of ALL transitions
-#FACT: J(ω) > 0 for ω > 0 leads to relaxation between states with Ei - Ef = ω ... 
-#CHECK what role does the operator play ? 
+#FACT: J(ω) > 0 for ω > 0 leads to relaxation between states with Ei - Ef = ω ...
+#CHECK what role does the operator play ?
 
 figure(figsize=(14,4));
 subplot(131)
@@ -437,7 +437,7 @@ if calc_2d
 
     ## calculate 2D spectra at
     T = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 100, 200, 300] # energy eV -> t => [hbar / eV] ~ 0.66 fs
-    T = [0, 30]
+    T = [0, 30, 60, 90, 200]
     spectra2d = Array{out2d}(undef, length(T))
 
     # cannot plot inside cmds.jl when multithreading
@@ -475,8 +475,8 @@ if calc_2d
         end
     fig.suptitle(rep * " 2D spectrum (" * scal * ". scaling)")
         k = 0
-        for i = 1:nrows
-            for j = 1:ncols
+        for i = 1:ncols
+            for j = 1:nrows
                 global k += 1
                 if k > nplots
                     continue
@@ -489,7 +489,7 @@ if calc_2d
         end
         tight_layout()
         subplots_adjust(top=0.825)
-  
+
     ## plot TA (summed 2D spectrum)
     figure()
     ta = [sum(spectra2d[i].full2d,dims=1) for i in 1:length(spectra2d)]
@@ -501,6 +501,6 @@ if calc_2d
 end
 
 
-# to plot time traces 
+# to plot time traces
 # cmds.plot_timeTrace([real(i.full2d) for i in out2d],T,out2d[1].ω,[1.925, 1.925, 2.24, 2.24],[1.925, 2.24, 2.24, 1.925])
 

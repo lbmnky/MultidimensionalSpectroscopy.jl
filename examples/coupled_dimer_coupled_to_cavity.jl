@@ -191,7 +191,7 @@ L = Γ_L .* L
 #display(dense(μ12))
 # ... and with the doubly excited state:
 #μ23 = one(b_fock) ⊗ (μ .* (j21*j12⊗j21 + j21*j12⊗j12 + j21⊗(j21*j12) + j12⊗(j21*j12)))
-#display(dense(μ23)) 
+#display(dense(μ23))
 CC = ccc ⊗ ccc
 ## make transition dipole operator FOR CAVITY !!!!!
 μ12 = at * (one(b_fock) ⊗ (J12a * J21a * CC)) + a * (one(b_fock) ⊗ (J12a * J21a * CC))
@@ -340,7 +340,7 @@ gs  = expect(rho0, rhot)
 subplot(333)
 plot(tout,real(es1),tout,real(es2),tout,cav,tout,gs)
 legend(["ES1", "ES2", "cav", "GS"],loc="right")
-tight_layout() 
+tight_layout()
 
 """
 figure(figsize=(6,4))
@@ -410,7 +410,7 @@ if calc_2d
         end
         tight_layout()
         subplots_adjust(top=0.88)
-        
+
 
         ω = spectra2d[1].ω
         ## plot additional things, like energy levels of states

@@ -73,12 +73,12 @@ gam = .1
 
 try
     local m = @which spectral_density(1)
-    Base.delete_method(m)   
+    Base.delete_method(m)
 catch
 end
 function spectral_density(ω) # power spectral density, thermal bath noise spectrum
     w = [(ω .- ωq_TDBC[i]) ./ (.5 * width) for i in 1:length(ωq_TDBC)]
-    if ω == 0 
+    if ω == 0
         #Jω = 0
         Jω = gam
     elseif !isless(real(ω),0)
@@ -103,6 +103,8 @@ R, ekets = timeevolution.bloch_redfield_tensor(H, [a_ops]; J=rates .* J)
 
 tout, rhot = timeevolution.master_bloch_redfield(tlist,μ12*rho0,R,H)
 corr = expect(μ12,rhot)
+
+zp = 10
 
 corr    = zeropad(corr,zp)
 tnew, ~ = interpt(tlist,zp)

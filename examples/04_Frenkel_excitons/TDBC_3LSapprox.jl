@@ -43,10 +43,10 @@ b_TLS = NLevelBasis(3)  # Hilbert-space of monomer
 j12 = transition(b_TLS,1,2)     # == g_e, or a / σ₋ (annihilation)
 j21 = transition(b_TLS,2,1)     # == e_g, or a† /σ⁺ (creation)
 
-j13 = transition(b_TLS,1,3)     
-j31 = transition(b_TLS,3,1)     
-j23 = transition(b_TLS,2,3)     
-j32 = transition(b_TLS,3,2)   
+j13 = transition(b_TLS,1,3)
+j31 = transition(b_TLS,3,1)
+j23 = transition(b_TLS,2,3)
+j32 = transition(b_TLS,3,2)
 # g_e / e_g notation from Constantin script
 
 # define Hamiltonian of the dimer
@@ -82,7 +82,7 @@ dt = 1.
 tlist = [0:dt:Tmax;]
 
 #     relaxation        dephasing
-#    _____________    _______________   
+#    _____________    _______________
 L = [j12, j13, j23,  j21*j12, j31*j13]
 Γ = [.01,.00 ,.05,    .13,     .01]
 L = Γ .* L
@@ -155,7 +155,7 @@ legend()
 
 try     # need to delete method first when working on it
     m = @which spectral_density(1)
-    Base.delete_method(m)   
+    Base.delete_method(m)
 catch
 end
 function spectral_density(ω) # power spectral density, thermal bath noise spectrum
@@ -166,7 +166,7 @@ function spectral_density(ω) # power spectral density, thermal bath noise spect
     η = 1
     η = f * γ / (2 * pi * 0.0259)
     ω_cut = .1
-    if ω == 0 
+    if ω == 0
         Jω = .01
     #elseif !isless(real(ω),0)
     #else
@@ -176,12 +176,12 @@ function spectral_density(ω) # power spectral density, thermal bath noise spect
     end
     if  !isless(real(ω),0) && ω != 0
         w = [(ω .- ωq_TDBC[i]) ./ (.5 * width) for i in 1:length(ωq_TDBC)]
-        Jω = sum([ampl_TDBC[i] ./ (1 .+ w[i].^2) for i in 1:length(ωq_TDBC)])  
+        Jω = sum([ampl_TDBC[i] ./ (1 .+ w[i].^2) for i in 1:length(ωq_TDBC)])
         Jω = η * ω * exp(-(ω/ω_cut)^2) + Jω
         Jω = Jω * (1/exp(b *  ω - 1) + 1)
     elseif isless(real(ω),0)
         w = [(ω .- ωq_TDBC[i]) ./ (.5 * width) for i in 1:length(ωq_TDBC)]
-        Jωa = sum([ampl_TDBC[i] ./ (1 .+ w[i].^2) for i in 1:length(ωq_TDBC)]) 
+        Jωa = sum([ampl_TDBC[i] ./ (1 .+ w[i].^2) for i in 1:length(ωq_TDBC)])
         Jω = η * -ω * exp(-(-ω/ω_cut)^2)
         Jω = Jω * (1/exp(b * -ω - 1)) + Jωa
     end
@@ -230,7 +230,7 @@ plot(collect(-1:.001:1),(spectral_density.(collect(-1:.001:1))))
 
 # load TA
 TDBC_TA_t0 = readdlm("TDBC_TA_t0.dat",',')                  # https://aip.scitation.org/doi/pdf/10.1063/1.469393
-TDBC_agg_abs = readdlm("TDBCaggr_abs.dat",',') 
+TDBC_agg_abs = readdlm("TDBCaggr_abs.dat",',')
 calc_ω = ω
 calc_abs = spec
 

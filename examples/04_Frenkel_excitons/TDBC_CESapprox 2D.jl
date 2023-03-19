@@ -16,7 +16,7 @@ cd(@__DIR__)
 # to use PyPlot in GUI mode under Linux
 pygui(true)
 # run once with calc_2d = false to initialize functions
-calc_2d = false   # !! use less values for k if running 2D 
+calc_2d = false   # !! use less values for k if running 2D
 
 Ω(k)      = Emon + 2 * V * cos( pi * k / (N + 1) )
 Ω2(k1,k2) = Emon + 2 * V * cos( pi * k1 / (N + 1) ) + Emon + 2 * V * cos( pi * k2 / (N + 1) )
@@ -25,18 +25,18 @@ calc_2d = false   # !! use less values for k if running 2D
 [i+j for i in 1:2 for j in 1:2 if i != j]
 # https://aip.scitation.org/doi/pdf/10.1063/1.469393
 μμ(k)        = μ_mon * sqrt( 2 / (N+1)) *             (1 - (-1)^k ) / 2 * cot( pi * k  / (2 * (N+1)))
-μμ2(k1,k2,k) = μ_mon * sqrt( 2 / (N+1)) * ( δ(k2,k) * (1 + (-1)^k1) / 2 * cot( pi * k1 / (2 * (N+1))) - 
+μμ2(k1,k2,k) = μ_mon * sqrt( 2 / (N+1)) * ( δ(k2,k) * (1 + (-1)^k1) / 2 * cot( pi * k1 / (2 * (N+1))) -
                                             δ(k1,k) * (1 + (-1)^k2) / 2 * cot( pi * k2 / (2 * (N+1))) +
-                                            1/2 * ( δ(k1-k2-k,0) - δ(k1-k2+k,0) ) * 
+                                            1/2 * ( δ(k1-k2-k,0) - δ(k1-k2+k,0) ) *
                                                   ( cot(pi * k1 / (2 * (N+1))) + cot(pi * k2 / (2 * (N+1))) ) +
                                             1/2 * ( δ(k1+k2+k,2*(N+1)) - δ(k1+k2-k,0) ) *
                                                   ( cot(pi * k1 / (2 * (N+1))) - cot(pi * k2 / (2 * (N+1))) ) )
 
-Sp(i) = transition(B_TDBC,1+i,i) 
+Sp(i) = transition(B_TDBC,1+i,i)
 Sm(i) = transition(B_TDBC,i,1+i)
 
-k  = [1, 2, 3, 5, 7, 9] 
-k  = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] 
+k  = [1, 2, 3, 5, 7, 9]
+#k  = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 k1 = [1, 2]#, 3, 4, 5, 6, 7]
 k2 = [1, 2]#, 3, 4, 5, 6, 7]
 K  = [(2,1),(3,2), (4,1), (6,1), (5,2)]
@@ -50,13 +50,13 @@ B_TDBC = NLevelBasis(1 + length(k) + length(K))
 
 try     # need to delete method first when working on it
     m = @which make_Ops(1)
-    Base.delete_method(m)   
+    Base.delete_method(m)
 catch
 end
 function make_Ops(num)
     global N = num
     ##
-    ωs_ge  = [Ω(i) for i in k] 
+    ωs_ge  = [Ω(i) for i in k]
     #ωs_ef  = [Ω2(i,j) for i in k for j in k2 if i > j]
     ωs_ef  = [Ω2(i...) for i in K]
     ωs     = vcat(ωs_ge,ωs_ef)
@@ -66,24 +66,24 @@ function make_Ops(num)
     μs_ef = zeros(length(k),length(K))
     for l in 1:length(K)
         for i in 1:length(k)
-            μs_ef[i,l] = μμ2(K[l]...,k[i]) 
+            μs_ef[i,l] = μμ2(K[l]...,k[i])
         end
     end
 
-    
+
     H   = sum(ωs[i] * transition(B_TDBC,1+i,1) * transition(B_TDBC,1,1+i) for i in 1:length(ωs))
     μ12 = sum(μs_ge[i] * transition(B_TDBC,1+i,1) for i in 1:length(k))
     μ23 = sum(μs_ef[i,j] * transition(B_TDBC,1+length(k)+j,1+i) for j in 1:length(K) for i in 1:length(k))
 
-    
-    
-    ## 
+
+
+    ##
 
     Σ⁺ge = μ12
     Σ⁺ef = μ23
     Σ⁺ = μ12 + μ23
     #Σ⁺ = sum(transition(testb,1+i,1) for i in 1:length(k))
-    
+
 
     #Σ⁺ = sum(Sp(i) for i in k)
     Σ⁻ = dagger(Σ⁺);
@@ -100,7 +100,7 @@ function make_Ops(num)
     #ccc = diagonaloperator(b_TLS,[1, 1/4, 1])
 
     #     relaxation        dephasing
-    #    _____________    _______________   
+    #    _____________    _______________
     #L = [j12, j13, j23,  j21*j12, j31*j13]
     #Γ = [.01,.00 ,.05,    .18,     .01]
     #L = Γ .* L
@@ -122,7 +122,7 @@ function make_Ops(num)
     μ23  = μ23 / sqrt(tr(rho1))
     rho1 = μ12 * rho0 * μ12
     rho2 = μ23 * rho1 * μ23
-    #μ23  = μ23 / sqrt(tr(rho2)) 
+    #μ23  = μ23 / sqrt(tr(rho2))
     rho2 = μ23 * rho1 * μ23
 
     return H, μ12, μ23, Σ⁺ge, Σ⁺ef, Σ⁺, Σ⁻, μs_ge, μs_ef, ωs_ge, ωs_ef, rho0, rho1, rho2, L
@@ -174,7 +174,7 @@ ax1  = subplot(241); title("Energy levels")
 ax1a = subplot(242); title("Noise-power spectrum S(ω)")
 ax2  = subplot(243); title("correlation function LB")
 ax2a = subplot(244); title("correlation function RF")
-ax3  = subplot(223); title("Kinetics in eigen/coupled basis") 
+ax3  = subplot(223); title("Kinetics in eigen/coupled basis")
 ax4  = subplot(247); title("Abs. spectrum LB")
 ax4a = subplot(248); title("Abs. spectrum RF")
 
@@ -207,7 +207,7 @@ g_fast = Δ^2 .* tlist ./ Λ   # Markovian limit
 
 # or ...
 #Δ_slow = 10 * 0.00414
-#Λ_slow = 1 
+#Λ_slow = 1
 #Δ_fast = 54 * 0.00414
 #Λ_fast = 5
 #
@@ -231,7 +231,7 @@ T = 300 # Kelvin
 
 Δ = Λ / κ # unit 1/s
 
-gt = Δ^2 / Λ^2 * (exp.(-Λ .* tlist) .+ Λ .* tlist .- 1) 
+gt = Δ^2 / Λ^2 * (exp.(-Λ .* tlist) .+ Λ .* tlist .- 1)
 
 #gt = g_slow + g_fast
 
@@ -305,7 +305,7 @@ end
 
 try     # need to delete method first when working on it
     m = @which spectral_density(1)
-    Base.delete_method(m)   
+    Base.delete_method(m)
 catch
 end
 function spectral_density(ω) # power spectral density, thermal bath noise spectrum
@@ -316,7 +316,7 @@ function spectral_density(ω) # power spectral density, thermal bath noise spect
     η = 1
     η = f * γ / (2 * pi * 0.0259)
     ω_cut = .1
-    if ω == 0 
+    if ω == 0
         Jω = .02
     #elseif !isless(real(ω),0)
     #else
@@ -326,12 +326,12 @@ function spectral_density(ω) # power spectral density, thermal bath noise spect
     end
     if  !isless(real(ω),0) && ω != 0
         w = [(ω .- ωq_TDBC[i]) ./ (.5 * width) for i in 1:length(ωq_TDBC)]
-        Jω = sum([ampl_TDBC[i] ./ (1 .+ w[i].^2) for i in 1:length(ωq_TDBC)])  
+        Jω = sum([ampl_TDBC[i] ./ (1 .+ w[i].^2) for i in 1:length(ωq_TDBC)])
         Jω = η * ω * exp(-(ω/ω_cut)^2) + Jω
         Jω = Jω * (1/exp(b *  ω - 1) + 1)
     elseif isless(real(ω),0)
         w = [(ω .- ωq_TDBC[i]) ./ (.5 * width) for i in 1:length(ωq_TDBC)]
-        Jωa = sum([ampl_TDBC[i] ./ (1 .+ w[i].^2) for i in 1:length(ωq_TDBC)]) 
+        Jωa = sum([ampl_TDBC[i] ./ (1 .+ w[i].^2) for i in 1:length(ωq_TDBC)])
         Jω = η * -ω * exp(-(-ω/ω_cut)^2)
         Jω = Jω * (1/exp(b * -ω - 1)) + Jωa
     end
@@ -400,7 +400,7 @@ plot(collect(-1:.001:1),(spectral_density.(collect(-1:.001:1))))
 
 # load TA
 TDBC_TA_t0 = readdlm("TDBC_TA_t0.dat",',') # https://aip.scitation.org/doi/pdf/10.1063/1.469393
-TDBC_agg_abs = readdlm("TDBCaggr_abs2.dat",',') 
+TDBC_agg_abs = readdlm("TDBCaggr_abs2.dat",',')
 calc_ω = ω[ω.<0]
 calc_abs = spec[ω.<0]
 
@@ -512,7 +512,7 @@ if calc_2d
 
         ## plot TA (summed 2D spectrum)
         figure()
-        ta = [sum(spectra2d[i].full2d,dims=1) for i in 1:length(spectra2d)] 
+        ta = [sum(spectra2d[i].full2d,dims=1) for i in 1:length(spectra2d)]
         ta = vcat(ta...)'
         ta = ta ./ maximum(real(ta))
         plot(ω,ta)

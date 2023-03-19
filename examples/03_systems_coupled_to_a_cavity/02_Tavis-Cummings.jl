@@ -6,7 +6,7 @@ cd(@__DIR__)
 
 pygui(true)
 
-calc_2d = false
+calc_2d = true
 
 cmp = create_colormap("bright");
 
@@ -197,7 +197,7 @@ if calc_2d
     zp = 11 # zeropad up to 2^zp
 
     ## calculate 2D spectra at
-    T = [0] #fs
+    T = [0, 15, 30] #fs
 
     spectra2d = Array{out2d}(undef, length(T))
     for i = 1:length(T)
@@ -218,8 +218,8 @@ if calc_2d
     rep="absorptive"
     scal="lin"
 
-    ## make  subplot layout
-    nplots = length(T); ncols = ceil(sqrt(nplots)); nrows = ceil(nplots / ncols)
+    ## make  subplot layoutDistri
+    nplots = length(T); ncols = Int8(ceil(sqrt(nplots))); nrows = Int8(ceil(nplots / ncols))
 
     ## create figure
     figure(figsize=(ncols*3,nrows*3));

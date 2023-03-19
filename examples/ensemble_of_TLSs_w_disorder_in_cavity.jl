@@ -9,7 +9,7 @@ pygui(true)
 
 # set various options
 calc_2d = true                                          # might be costly
-use_sub = true                                          # can use single and double excitation subspace with lindblad master equation
+use_sub = false                                          # can use single and double excitation subspace with lindblad master equation
 
 # set colormap from cmds module
 cmp = create_colormap("bright");
@@ -20,7 +20,7 @@ cmp = create_colormap("bright");
 Na  = 1                                                 # number of cavity fock states
 A   = FockBasis(Na)                                     # basis
 a   = destroy(A)                                        # annihilation operator
-at  = create(A)                                         # creation operator 
+at  = create(A)                                         # creation operator
 H_r = (ωr * at * a)                                     # cavity Hamiltonian
 
 # SINGLE TLS PARAMETERS
@@ -44,7 +44,7 @@ B_TLSs = b_TLS^num_of_TLSs               # creates a composite basis (alt.: Comp
 B_full = B_TLSs ⊗ A
 
 # #CHECK ???  !! NEED TO GET RID OF ELEMENTS WITH HIGHER EX SECTORS
-cccc  = diagonaloperator(b_TLS,[1,1/2])
+cccc  = diagonaloperator(b_TLS,[complex(1),1/2])
 
 # define σ- and σ+ in composite basis #TODO call them Σ for consistency
 #Sm = +([tensor(circshift(append!([sm],repeat([one(sm)],num_of_TLSs-1)),i-1)...) for i in 1:num_of_TLSs]...)
@@ -55,7 +55,7 @@ Sp = dagger(Sm)
 # jump operators for Lindblad time evolution
 # j_ops needs to be "list" of objects for relaxation from the individual excited states
 
-# TODO what's this useful for / what is correct ? 
+# TODO what's this useful for / what is correct ?
 temp = one(sm)
 temp.data[2,2] = 1/sqrt(2)
 #j_ops = [tensor(circshift(append!([sm],repeat([one(sm)],num_of_TLSs-1)),i-1)...) for i in 1:num_of_TLSs]
@@ -86,7 +86,7 @@ append!(j_ops,j_ops_b)
 elements = collect(permutations(push!([sp*sm],repeat([one(b_TLS)],num_of_TLSs-1)...)))
 μ23 = +([tensor(elements[i]...) for i in 1:length(elements)]...)
 
-# just one ! 
+# just one !
 #μ23 = tensor(one(b_TLS) , sp*sm )
 #μ23 = (μ23 + dagger(μ23))
 # normalize later
@@ -100,7 +100,7 @@ disorder[1] = sort(rand(Normal(0,.035),nvals+1))[50]
 disorder[end] = sort(rand(Normal(0,.035),nvals+1))[end-50]
 # scale disorder
 disorder ./= 2
-# + 1, because I multiply with this values rather than add it to the energy 
+# + 1, because I multiply with this values rather than add it to the energy
 disorder .+= 1
 
 # turn disorder off
@@ -115,7 +115,7 @@ H_en = +([disorder[i] * embed(B_TLSs,i,H_TLS) for i in 1:num_of_TLSs]...);
 #H_int = H_int + dagger(H_int)
 
 ## construct full composite Hamiltonian
-g0 = 0.1 
+g0 = 0.1
 g = g0 * sqrt(num_of_TLSs)
 H = H_en ⊗ one(H_r) + one(H_en) ⊗ H_r + g * (Sm ⊗ at + Sp ⊗ a)
 
@@ -153,7 +153,7 @@ rho1 = μ12 * (rho0 * μ12)
 
 #TODO: correctly normalize μ23
 rho2 =  μ23 *  rho1 * μ23
-# μ23 = μ23 / binomial(num_of_TLSs,0) ### somehow in this way ??? 
+# μ23 = μ23 / binomial(num_of_TLSs,0) ### somehow in this way ???
 
 ## j_ops in full system
 Γ     = [.3] #.1 * [.1,.6]
@@ -238,11 +238,11 @@ end
 
 ## calculate (complex) 3rd order corr function (with T=0)
 if calc_2d
-    
+
     zp = 10 # zeropad up to 2^zp
 
     ## calculate 2D spectra at
-    T = [5] #fs
+    T = [50] #fs
 
     # init output array
     spectra2d = Array{out2d}(undef, length(T))

@@ -238,7 +238,7 @@ LL = .2
 
 try
     m = @which spectral_density(1)
-    Base.delete_method(m)   
+    Base.delete_method(m)
 catch
 end
 function spectral_density(ω)
@@ -250,7 +250,7 @@ function spectral_density(ω)
         #return abs.(λ * 2 * Λ * ω ./ (ω.^2 .+ Λ^2))
         #return .1 ./ (1 .+ w.^2)
         #return abs.(λ .* ω .+ .1 ./ (1 .+ (w).^2))
-        #return abs.(λ / ωc * ω .* exp.(-ω ./ ωc))       #  Ohmic  exponentially  cutoffspectral density: λ reorganization energy, ωc cutoff frequency 
+        #return abs.(λ / ωc * ω .* exp.(-ω ./ ωc))       #  Ohmic  exponentially  cutoffspectral density: λ reorganization energy, ωc cutoff frequency
         #return abs.(LL .* ω .* G) #./ (G^2 .+ w.^2)
     end
 end
