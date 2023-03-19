@@ -1,6 +1,10 @@
 using MultidimensionalSpectroscopy, QuantumOptics, LinearAlgebra, FFTW, Colors,
     Printf, DelimitedFiles, Plots
 
+default(titlefont = (14, "times"), legendfontsize = 10, guidefont = (10, :black),
+    tickfont = (10, :black), framestyle = :box, yminorgrid = true,
+    linewidth=2)
+
 # make sure to set script directory as pwd()
 cd(@__DIR__)
 
@@ -34,9 +38,9 @@ end
 # angle α₂ and a length d₂.
 
 # position of dipole 1 and angle wrt to x-axis (input)
-x₁, y₁, α₁, d₁ = 0, 0, angle2rad(90), 0.25
+x₁, y₁, α₁, d₁ = 0, 0, angle2rad(0), 0.25
 # r: distance, β: slip angle
-r, β = 0.55, angle2rad(0)#23.147495)
+r, β = 0.85, angle2rad(90)#23.147495)
 #r , β          = 19.3155, angle2rad(0)
 # position of dipole 2 (calculated from above)
 x₂, y₂ = x₁ + r * cos(β), y₁ + r * sin(β)
@@ -48,8 +52,8 @@ x₂, y₂ = x₁ + r * cos(β), y₁ + r * sin(β)
 # hetero dimer  : E1 ≠ E2
 E₁ = 2.396    # energy eV -> t = hbar /eV  , 0.66 fs
 E₂ = 2.796
-#E₂ = 2.396
-E_RWA = E₁
+E₂ = 2.396
+E_RWA = (E₁ + E₂) / 2
 E_RWA = 0
 E₁ = E₁ - E_RWA
 E₂ = E₂ - E_RWA
@@ -58,7 +62,7 @@ E₂ = E₂ - E_RWA
 #figure(figsize = (10, 4));
 #ax1 = subplot(231);
 #grid("on")
-ax1 = plot([x₁, x₂], [y₁, y₂], xlims=(-0.5, x₂ + 0.5), ylims=(-0.5, y₂ + 0.5), legend=false)#, linestyle = "--", color = "k")
+ax1 = plot([x₁, x₂], [y₁, y₂], xlims=(-0.5, x₂ + 0.5), ylims=(-0.5, y₂ + 0.5), legend=false, marker=:circle)#, linestyle = "--", color = "k")
 qu1 = draw_dipole(x₁, y₁, α₁, d₁);
 qu2 = draw_dipole(x₂, y₂, α₂, d₂);
 
@@ -167,7 +171,7 @@ Psi0 = nlevelstate(b_mon, 1) ⊗ nlevelstate(b_mon, 1)
 rho0 = dm(Psi0)
 
 ## time list for evaluation of master equation
-tlist = [0:0.7:100;]
+tlist = [0:0.7:200;]
 
 ## make collapse operator #CHECK #TODO: understand better (why ccc?)
 ccc = diagonaloperator(b_mon, [1, 0])
@@ -389,10 +393,10 @@ end
 
 if calc_2d
 
-    zp = 11 # zeropad up to 2^zp
+    zp = 10 # zeropad up to 2^zp
 
     ## calculate 2D spectra at
-    T = [0] #fs
+    T = [206.5] #fs
 
     spectra2d = Array{out2d}(undef, length(T))
 
@@ -407,7 +411,7 @@ if calc_2d
     spectra2d = [crop2d(spectra2d[i], 0.5 .- E_RWA; w_max=5 .- E_RWA, step=1) for i ∈ 1:length(T)]
 
     ## plot 2D spectra for each(?) T
-    # what to plot
+    # what to plot>
     rep = "absorptive"
     scal = "asinh"
 
@@ -439,32 +443,34 @@ if calc_2d
     #        sca(ax[i, j])
     #        ax[i, j].set_aspect = "equal"
     #        #plot2d(out2d[k].ω,round.(out2d[k].full2d,digits=1);repr=rep,scaling=scal,norm=maxi/2)
-            plot2d(ω, round.(spectra2d[k].full2d, digits=1); repr=rep, scaling=scal, norm=maxi / 2)
-    #        title("2D spectrum at $(T[k]) fs")
+            global ax = plot2d(spectra2d[k].ω, round.(spectra2d[k].full2d, digits=1); repr=rep, scaling=scal, norm=maxi / 2)
+            title!("2D spectrum at $(T[k]) fs")
         end
     end
     #tight_layout()
     #subplots_adjust(top=0.9)
 
-    ## plot additional things, like energy levels of states
-    #plot([E₁, E₁], [ω[1], ω[end]], "k--", linewidth=1, alpha=0.25)
-    #plot([E₂, E₂], [ω[1], ω[end]], "k--", linewidth=1, alpha=0.25)
-    #plot([ω[1], ω[end]], [E₁, E₁], "k--", linewidth=1, alpha=0.25)
-    #plot([ω[1], ω[end]], [E₂, E₂], "k--", linewidth=1, alpha=0.25)
-    #plot([energies[2:3], energies[2:3]], [ω[1], ω[end]], "g--", linewidth=1, alpha=0.25)
-    #plot([ω[1], ω[end]], [energies[2:3], energies[2:3]], "g--", linewidth=1, alpha=0.25)
 
+    ## plot additional things, like energy levels of states
+    plot!([E₁, E₁], [ω[1], ω[end]])#, "k--", linewidth=1, alpha=0.25)
+    plot!([E₂, E₂], [ω[1], ω[end]])#, "k--", linewidth=1, alpha=0.25)
+    plot!([ω[1], ω[end]], [E₁, E₁])#, "k--", linewidth=1, alpha=0.25)
+    plot!([ω[1], ω[end]], [E₂, E₂])#, "k--", linewidth=1, alpha=0.25)
+    plot!([energies[2:3], energies[2:3]], [ω[1], ω[end]])#, "g--", linewidth=1, alpha=0.25)
+    plot!([ω[1], ω[end]], [energies[2:3], energies[2:3]])#, "g--", linewidth=1, alpha=0.25)
+
+    plot(ax, layout=1, xlims=(2,3.2), ylims=(2,3.2), legend=false)
     ## Save data
     #save_2d(out2d,T,fn)
 
+    #plot2d_comps(spectra2d[1])
+
     ## plot TA (summed 2D spectrum)
-    figure()
-    ta = [sum(real(spectra2d[i].full2d), dims=1) for i in 1:length(spectra2d)] ./ length(spectra2d)
-    plot(ω, vcat(ta...)')
-    plot(ω, zeros(size(ω)), linestyle="dashed")
-    xlabel("Energy/frequency")
-    ylabel("Difference absorption")
-    tight_layout()
+    #ta = [sum(real(spectra2d[i].full2d), dims=1) for i in 1:length(spectra2d)] ./ length(spectra2d)
+    #plot(ω, vcat(ta...)')
+    #plot!(ω, zeros(size(ω)), linestyle=:dash)
+    #xlabel!("Energy/frequency")
+    #ylabel!("Difference absorption")
 
 end
 

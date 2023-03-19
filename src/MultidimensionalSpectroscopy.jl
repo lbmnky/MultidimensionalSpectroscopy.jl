@@ -77,14 +77,16 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
 
     # rescale lvls to data (don't rescale data, as it takes more time)
     # - redundant if data is normalized to 1.
-    m = -1 * (maximum(abs.(data))); M = (maximum(abs.(data)))
-    if m == 0 && M == 0             # set minimum level in case m == 0 and M == 0
-        lvls = 0.001 * lvls;
-    elseif m == Inf || M == Inf     # throw error in case of inf
-        println("\nERROR: z-value is Inf!\n")
-    else                            # scale lvls
-        lvls = lvls * maximum(abs.([m, M]));
-        lvls_ticks = [-1:0.2:1;] * maximum(abs.([m, M]))
+    if !norm_spec
+        m = -1 * (maximum(abs.(data))); M = (maximum(abs.(data)))
+        if m == 0 && M == 0             # set minimum level in case m == 0 and M == 0
+            lvls = 0.001 * lvls;
+        elseif m == Inf || M == Inf     # throw error in case of inf
+            println("\nERROR: z-value is Inf!\n")
+        else                            # scale lvls
+            lvls = lvls * maximum(abs.([m, M]));
+            lvls_ticks = [-1:0.2:1;] * maximum(abs.([m, M]))
+        end
     end
 
     # normalize to global maximum with evolution time T scan
@@ -109,21 +111,27 @@ function plot2d(ω, data; repr = "absorptive", norm_spec=false, scaling="lin", n
         xlabel("detection (ω₃)"); ylabel("excitation (ω₁)"); #clim([m, M]);
     elseif conv == "ω3ω1"
         #cs  = contourf(ω,ω,transpose(data),lvls,cmap=cmp);
-        contourf(ω,ω,transpose(data))
+        p1 = heatmap(ω,ω,transpose(data), color=:diverging_bwr_20_95_c54_n256,
+                clims=(minimum(lvls), maximum(lvls)), aspect_ratio=1)
         if repr == "phase"
             cs2 = contour(ω,ω,transpose(data_cntl),lvls,colors="white",linewidths=(.5,))
         else
             #cs2 = contour(cs,levels=cs.levels[:],colors="gray",linewidths=(.5,))
             #contour(cs,levels=cs.levels[:])
+            contour!(ω,ω,transpose(data),color=:gray, levels=lvls, linewidth=.5)
         end
-        xlabel("excitation (ω₁)"); ylabel("detection (ω₃)");
+        xlabel!("excitation (ω₁)")
+        ylabel!("detection (ω₃)")
+        #xlabel("excitation (ω₁)"); ylabel("detection (ω₃)");
     end
 
     # add colorbar
-    cbar = colorbar(cs)
-    cbar.add_lines(cs2)
+    #cbar = colorbar(cs)
+    #cbar.add_lines(cs2)
     # add diagonal line
-    plot([ω[1], ω[end]], [ω[1], ω[end]],"k--");
+    plot!([ω[1], ω[end]], [ω[1], ω[end]], color=:gray15, linestyle=:dash)
+
+    return p1
 
 end
 
@@ -490,8 +498,11 @@ H, ..., dat_a, dat_b, dat_c  = create_subspace(H, ..., dat_a, dat_b, dat_c)
 `H_site    = transf_op     * H_eigen     * transf_op'`
 """
 function create_subspace(H, manifold, dat...)
+
     Eivecs = eigvecs(dense(H[1]).data)
+
     L = length(H[1].basis_l.bases)
+
     # size of subspace
     if manifold == "bi"
         n_sub = 1 + L + binomial(L,2)
@@ -517,8 +528,11 @@ function create_subspace(H, manifold, dat...)
 end
 
 function create_subspace(H, manifold, F, dat...)
+
     Eivecs = eigvecs(dense(H[1]).data)
+
     L = length(H[1].basis_l.bases)
+
     # size of subspace
     if manifold == "bi"
         #n_sub = 1 + L + binomial(L,2)
@@ -1023,6 +1037,10 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
         println("error T-dep H")
     end
 
+    if t2coh == "coh"
+        t2coh = "vib"
+    end
+
     ## switch between Lindblad and Redfield master equation
     t_ev(A,B,C,D) =
         if method == "lindblad"
@@ -1299,10 +1317,10 @@ function correlations(tlist, rho0, H, F, μ_ge, μ_ef, T, pathway, method, debug
                     println("rho2_T[1] (before T evolution)")
                     println(rho2_T[1])
                 end
-                println("rho2a")
-                println(rho2a)
-                println("rho2b")
-                println(rho2b)
+                #println("rho2a")
+                #println(rho2a)
+                #println("rho2b")
+                #println(rho2b)
                 println("rho2")
                 println(rho2)
                 println(" ")
@@ -1375,25 +1393,27 @@ Plots GSB, SE and ESA component of 2D spectrum.
 """
 function plot2d_comps(data)
 
-    fig, ax = subplots(1,4,sharex=true,sharey=true,figsize=(15,3))
+    #fig, ax = subplots(1,4,sharex=true,sharey=true,figsize=(15,3))
 
-    sca(ax[1])
-    plot2d(data.ω, data.full2d)
-    PyPlot.title("absorptive")
+    #sca(ax[1])
+    p1 = plot2d(data.ω, data.full2d)
+    title!("absorptive")
 
-    sca(ax[2])
-    plot2d(data.ω, data.gsb)
-    PyPlot.title("GSB")
+    #sca(ax[2])
+    p2 = plot2d(data.ω, data.gsb)
+    title!("GSB")
 
-    sca(ax[3])
-    plot2d(data.ω, data.se)
-    PyPlot.title("SE")
+    #sca(ax[3])
+    p3 = plot2d(data.ω, data.se)
+    title!("SE")
 
-    sca(ax[4])
-    plot2d(data.ω, data.esa)
-    PyPlot.title("ESA")
+    #sca(ax[4])
+    p4 = plot2d(data.ω, data.esa)
+    title!("ESA")
 
-    tight_layout()
+    plot(p1, p2, p3, p4, size=(1200,300), layout=(1,4), aspect_ratio=1, xlims=(2,3.2),
+         ylims=(2,3.2), legend=false, colorbar=false)
+    #tight_layout()
 end
 
 #TODO: is this useful ?
