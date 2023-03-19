@@ -1,8 +1,8 @@
 using MultidimensionalSpectroscopy, QuantumOptics, LinearAlgebra, FFTW, Colors,
     Printf, DelimitedFiles, Plots
 
-default(titlefont = (14, "times"), legendfontsize = 10, guidefont = (10, :black),
-    tickfont = (10, :black), framestyle = :box, yminorgrid = true,
+default(titlefont = (14, "times"), legendfontsize = 9, guidefont = (10, :black),
+    tickfont = (9, :black), framestyle = :box, yminorgrid = true,
     linewidth=2)
 
 # make sure to set script directory as pwd()
@@ -21,7 +21,8 @@ cmp = create_colormap("bright");
 function draw_dipole(x, y, α, d)
     #quiver(x - d / 2 * cos(α), y - d / 2 * sin(α), d * cos(α), d * sin(α), angles = "xy",
     #	scale_units = "xy", scale = 1, color = "r")
-    qu = quiver!([x - d / 2 * cos(α)], [y - d / 2 * sin(α)], quiver=([d * cos(α)], [d * sin(α)]))
+    qu = quiver!([x - d / 2 * cos(α)], [y - d / 2 * sin(α)], quiver=([d * cos(α)], [d * sin(α)]),
+                color=:gray15)
     #sc = scatter([x], [y])
     return qu
 end
@@ -62,7 +63,8 @@ E₂ = E₂ - E_RWA
 #figure(figsize = (10, 4));
 #ax1 = subplot(231);
 #grid("on")
-ax1 = plot([x₁, x₂], [y₁, y₂], xlims=(-0.5, x₂ + 0.5), ylims=(-0.5, y₂ + 0.5), legend=false, marker=:circle)#, linestyle = "--", color = "k")
+ax1 = plot([x₁, x₂], [y₁, y₂], xlims=(-0.5, x₂ + 0.5), ylims=(-0.5, y₂ + 0.5), legend=false, marker=:circle,
+            color=:gray50, linewidth=5)#, linestyle = "--", color = "k")
 qu1 = draw_dipole(x₁, y₁, α₁, d₁);
 qu2 = draw_dipole(x₂, y₂, α₂, d₂);
 
@@ -111,12 +113,12 @@ mu2hat = one(b_mon) ⊗ (j12 + j21)
 
 ## visualize combined tdm (offset in y a bit for clarity)
 qu2 = quiver!([(x₁ + x₂) / 2 - (d₁xy[1] + d₂xy[1]) / 2], [(y₁ + y₂) / 2 - (d₁xy[2] + d₂xy[2]) / 2 + 0.05],
-    quiver=([d₁xy[1] + d₂xy[1]], [d₁xy[2] + d₂xy[2]]))
+    quiver=([d₁xy[1] + d₂xy[1]], [d₁xy[2] + d₂xy[2]]), color=:red, label="test")
 
 qu3 = quiver!([(x₁ + x₂) / 2 - (d₁xy[1] - d₂xy[1]) / 2], [(y₁ + y₂) / 2 - (d₁xy[2] - d₂xy[2]) / 2 + 0.05],
-    quiver=([d₁xy[1] - d₂xy[1]], [d₁xy[2] - d₂xy[2]]))
+    quiver=([d₁xy[1] - d₂xy[1]], [d₁xy[2] - d₂xy[2]]), color=:blue)
 
-scatter!([(x₁ + x₂) / 2], [(y₁ + y₂) / 2])
+#scatter!([(x₁ + x₂) / 2], [(y₁ + y₂) / 2])
 
 
 
@@ -152,15 +154,15 @@ energies = eigvals(dense(H).data)
 
 ax3 = plot()
 for e in [0, E₁]
-    plot!([-1.25, -0.75], [e, e], legend=false)
+    plot!([-1.25, -0.75], [e, e], legend=false, color=:gray15)
 end
 
 for e in energies[:]
-    plot!([-0.25, 0.25], [e, e], legend=false)
+    plot!([-0.25, 0.25], [e, e], legend=false, color=:gray15)
 end
 
 for e in [0, E₂]
-    plot!([0.75, 1.25], [e, e], legend=false)
+    plot!([0.75, 1.25], [e, e], legend=false, color=:gray15)
 end
 
 title!("Mon. and dimer energy levels")
